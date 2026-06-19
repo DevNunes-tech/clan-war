@@ -1,14 +1,18 @@
-const sequelize = require('./config/database');
+const connectDatabase = require('./config/database');
 const Clan = require('./models/Clan');
 const User = require('./models/User');
 
 async function seed() {
     try {
-        await sequelize.sync({ force: true });
-        console.log('Database synced (force: true)');
+        await connectDatabase();
+        await Promise.all([
+            Clan.deleteMany({}),
+            User.deleteMany({})
+        ]);
+        console.log('Database cleared');
 
         // Create a default clan
-        const clan = await Clan.create({
+        await Clan.create({
             name: 'Os Bárbaros',
             tag: '#L98JQV',
             medals: 18450,
@@ -20,8 +24,7 @@ async function seed() {
         console.log('Default clan created');
 
         // Create a default user
-        const UserMod = require('./models/User');
-        await UserMod.create({
+        await User.create({
             email: 'lider@clashclan.com',
             password: '123', // In a real app, use bcrypt
             clanTag: '#L98JQV',

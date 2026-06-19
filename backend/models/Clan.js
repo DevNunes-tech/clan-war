@@ -1,31 +1,27 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const mongoose = require('mongoose');
 
-const Clan = sequelize.define('Clan', {
-    id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
-    },
+const clanSchema = new mongoose.Schema({
     name: {
-        type: DataTypes.STRING,
-        allowNull: false
+        type: String,
+        required: true,
+        trim: true
     },
     tag: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        unique: true
+        type: String,
+        required: true,
+        unique: true,
+        trim: true
     },
     medals: {
-        type: DataTypes.INTEGER,
-        defaultValue: 0
+        type: Number,
+        default: 0
     },
     members: {
-        type: DataTypes.JSON,
-        defaultValue: []
+        type: [mongoose.Schema.Types.Mixed],
+        default: []
     }
 }, {
     timestamps: true
 });
 
-module.exports = Clan;
+module.exports = mongoose.model('Clan', clanSchema);

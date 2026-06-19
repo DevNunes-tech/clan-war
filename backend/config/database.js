@@ -1,15 +1,17 @@
-const { Sequelize } = require('sequelize');
+const mongoose = require('mongoose');
 require('dotenv').config();
 
-const sequelize = new Sequelize(process.env.DATABASE_URL, {
-    dialect: 'postgres',
-    logging: false, // Set to console.log to see SQL queries
-    dialectOptions: {
-        ssl: process.env.DB_SSL === 'true' ? {
-            require: true,
-            rejectUnauthorized: false
-        } : false
+async function connectDatabase() {
+    if (!process.env.MONGODB_URI) {
+        throw new Error('MONGODB_URI não definido no arquivo .env');
     }
-});
 
-module.exports = sequelize;
+    if (mongoose.connection.readyState === 1) {
+        return mongoose;
+    }
+
+    await mongoose.connect(process.env.MONGODB_URI);
+    return mongoose;
+}
+
+module.exports = connectDatabase;

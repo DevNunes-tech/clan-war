@@ -31,7 +31,7 @@ router.post('/login', async (req, res) => {
             });
         }
 
-        let user = await User.findOne({ where: { clanTag: player.tag } });
+        let user = await User.findOne({ clanTag: player.tag });
         if (!user) {
             user = await User.create({
                 name: player.name,

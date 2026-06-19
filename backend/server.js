@@ -1,18 +1,10 @@
 const express = require('express');
 const cors = require('cors');
-const sequelize = require('./config/database');
+const connectDatabase = require('./config/database');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-
-sequelize.authenticate()
-    .then(() => {
-        console.log('Connected to PostgreSQL');
-        return sequelize.sync({ alter: true });
-    })
-    .then(() => console.log('Database synced'))
-    .catch(err => console.error('Could not connect to PostgreSQL', err));
 
 app.use(cors({
     origin: ['http://localhost:3000', 'https://brootherwood.com.br', 'http://brootherwood.com.br', 'https://www.brootherwood.com.br']
@@ -27,7 +19,19 @@ app.get('/', (req, res) => {
     res.send('WarTracker API is running...');
 });
 
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+async function startServer() {
+    try {
+        await connectDatabase();
+        console.log('Connected to MongoDB');
+
+        app.listen(PORT, () => {
+            console.log(`Server is running on port ${PORT}`);
+        });
+    } catch (err) {
+        console.error('Could not connect to MongoDB', err);
+        process.exit(1);
+    }
+}
+
+startServer();
 
