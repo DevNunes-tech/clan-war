@@ -35,7 +35,7 @@ import {
     MessageSquare
 } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://clan-war-yyeq-293jzglkg-oliverws7s-projects.vercel.app';
+const API_URL = import.meta.env.VITE_API_URL || 'https://clan-war-yyeq.vercel.app';
 
 const getAuthHeaders = (extraHeaders = {}) => {
     const token = localStorage.getItem('token');

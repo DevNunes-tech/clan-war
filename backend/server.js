@@ -11,10 +11,12 @@ app.use(cors({
         'http://localhost:3000',
         'http://localhost:4173',
         'http://localhost:5173',
+        'https://clan-war.vercel.app',
         'https://brootherwood.com.br',
         'http://brootherwood.com.br',
         'https://www.brootherwood.com.br'
-    ]
+    ],
+    credentials: true
 }));
 app.use(express.json());
 
