@@ -6,12 +6,21 @@ const normalizeTag = (tag) => String(tag || '')
     .replace(/["']/g, '')
     .toUpperCase();
 
+const getDateKey = (date = new Date()) => date.toISOString().slice(0, 10);
+
+const getDateLabel = (date = new Date()) => date.toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+});
+
 exports.getClanStats = async (req, res) => {
     let clanTag = normalizeTag(req.query.tag || process.env.CLAN_TAG || '#L98JQV');
     console.log('Buscando dados para a Tag:', clanTag);
 
 
     try {
+        const clanRecord = await Clan.findOne({ tag: clanTag });
         const apiClan = await crApi.getClan(clanTag);
         const riverRace = await crApi.getRiverRace(clanTag);
 
@@ -42,6 +51,15 @@ exports.getClanStats = async (req, res) => {
         const today = new Date();
         const dayIdx = today.getDay(); // 0-Dom, 4-Qui, 5-Sex, 6-Sab
         const isWarDay = dayIdx === 0 || dayIdx >= 4;
+        const activeWarWindow = isWarDay && today.getHours() >= 22;
+        const missedDecksToday = members
+            .filter(member => Number(member.decksUsed || 0) < 4)
+            .map(member => ({
+                name: member.name,
+                tag: member.tag,
+                decksUsed: Number(member.decksUsed || 0),
+                decksMissed: Math.max(0, 4 - Number(member.decksUsed || 0))
+            }));
 
         res.json({
             name: apiClan.name,
@@ -52,6 +70,9 @@ exports.getClanStats = async (req, res) => {
             membersParticipating: activeParticipants.length,
             totalMembers: apiClan.members,
             members: members,
+            missedDecksToday,
+            warAttendance: Array.isArray(clanRecord?.warAttendance) ? clanRecord.warAttendance.slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) : [],
+            endOfDayAlert: activeWarWindow && missedDecksToday.length > 0,
             fromApi: true,
             isWarDay: isWarDay
         });
@@ -72,6 +93,70 @@ exports.getClanStats = async (req, res) => {
             name: 'Clã não encontrado',
             tag: clanTag
         });
+    }
+};
+
+exports.saveWarAttendance = async (req, res) => {
+    const clanTag = normalizeTag(req.body.clanTag || req.query.tag || process.env.CLAN_TAG || '#L98JQV');
+    const memberTag = normalizeTag(req.body.memberTag);
+    const memberName = String(req.body.memberName || '').trim();
+    const justification = String(req.body.justification || '').trim();
+    const decksUsed = Number(req.body.decksUsed);
+    const reportedBy = String(req.body.reportedBy || '').trim();
+
+    if (!memberTag || !memberName) {
+        return res.status(400).json({ message: 'Tag e nome do membro são obrigatórios.' });
+    }
+
+    if (!Number.isFinite(decksUsed) || decksUsed < 0) {
+        return res.status(400).json({ message: 'Quantidade de decks usada inválida.' });
+    }
+
+    try {
+        const clan = await Clan.findOne({ tag: clanTag });
+        if (!clan) {
+            return res.status(404).json({ message: 'Clã não encontrado para registrar a justificativa.' });
+        }
+
+        const now = new Date();
+        const dateKey = getDateKey(now);
+        const dateLabel = getDateLabel(now);
+        const decksMissed = Math.max(0, 4 - decksUsed);
+
+        const existingIndex = clan.warAttendance.findIndex((entry) =>
+            entry.dateKey === dateKey && normalizeTag(entry.memberTag) === memberTag
+        );
+
+        const attendanceRecord = {
+            dateKey,
+            dateLabel,
+            memberName,
+            memberTag,
+            decksUsed,
+            decksMissed,
+            justification,
+            reportedBy
+        };
+
+        if (existingIndex >= 0) {
+            clan.warAttendance[existingIndex] = {
+                ...clan.warAttendance[existingIndex].toObject?.() || clan.warAttendance[existingIndex],
+                ...attendanceRecord
+            };
+        } else {
+            clan.warAttendance.push(attendanceRecord);
+        }
+
+        await clan.save();
+
+        res.json({
+            success: true,
+            attendance: attendanceRecord,
+            warAttendance: clan.warAttendance.slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        });
+    } catch (error) {
+        console.error('War Attendance Error:', error.stack);
+        res.status(500).json({ message: 'Erro ao salvar justificativa de guerra', error: error.message });
     }
 };
 

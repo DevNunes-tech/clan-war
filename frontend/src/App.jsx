@@ -26,14 +26,16 @@ export default function App() {
 
   if (currentView === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-100 font-black uppercase tracking-widest text-slate-400 animate-pulse">
-        Carregando Sessão...
+      <div className="min-h-screen flex items-center justify-center bg-[#080B14] text-slate-100 font-black uppercase tracking-[0.35em]">
+        <div className="wt-card wt-border-glow rounded-3xl px-8 py-6 text-sm text-slate-300 animate-pulse">
+          Carregando sessão estratégica...
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
+    <div className="min-h-screen bg-[#080B14] text-slate-100 font-sans">
       {currentView === 'landing' && <LandingPage onNavigate={navigateTo} />}
       {currentView === 'login' && <LoginPage onNavigate={navigateTo} />}
       {currentView === 'dashboard' && <Dashboard onNavigate={navigateTo} />}

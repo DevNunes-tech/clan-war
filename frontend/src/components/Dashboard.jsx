@@ -25,7 +25,14 @@ import {
     Loader2,
     Printer,
     Share2,
-    FileText
+    FileText,
+    Sparkles,
+    Radar,
+    LayoutGrid,
+    Activity,
+    TrendingUp,
+    Monitor,
+    MessageSquare
 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -60,17 +67,22 @@ const normalizeClanStats = (data = {}) => ({
     membersParticipating: Number(data.membersParticipating || 0),
     totalMembers: Number(data.totalMembers || 0),
     isWarDay: Boolean(data.isWarDay),
+    missedDecksToday: Array.isArray(data.missedDecksToday) ? data.missedDecksToday : [],
+    endOfDayAlert: Boolean(data.endOfDayAlert),
+    warAttendance: Array.isArray(data.warAttendance) ? data.warAttendance : [],
     members: Array.isArray(data.members) ? data.members : []
 });
 
 const normalizeClanMember = (member = {}, isWarDay = false) => {
     const status = isWarDay ? member.status : 'Treino';
-    let scoreClass = 'bg-slate-100 text-slate-500';
+    const decksUsedCount = Number(member.decksUsed || 0);
+    const decksMissing = Math.max(0, 4 - decksUsedCount);
+    let scoreClass = 'bg-white/5 text-slate-300 border border-white/5';
 
     if (isWarDay) {
         scoreClass = member.status === 'Concluído'
-            ? 'bg-green-100 text-green-700'
-            : (member.status === 'Em Batalha' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700');
+            ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/20'
+            : (member.status === 'Em Batalha' ? 'bg-amber-500/15 text-amber-300 border border-amber-500/20' : 'bg-red-500/15 text-red-300 border border-red-500/20');
     }
 
     return {
@@ -78,7 +90,9 @@ const normalizeClanMember = (member = {}, isWarDay = false) => {
         name: member.name || 'Sem nome',
         role: member.role || 'member',
         trophies: Number(member.trophies || 0),
-        decksUsed: `${Number(member.decksUsed || 0)}/4`,
+        decksUsed: `${decksUsedCount}/4`,
+        decksUsedCount,
+        decksMissing,
         medals: Number(member.medals || 0),
         status,
         score: scoreClass
@@ -132,14 +146,16 @@ export default function Dashboard({ onNavigate }) {
 
     const [clanMembers, setClanMembers] = useState([]);
     const [warHistory, setWarHistory] = useState({ weekHeaders: [], members: [] });
+    const [warAttendance, setWarAttendance] = useState([]);
     const [selectedMember, setSelectedMember] = useState(null);
     const [showMemberModal, setShowMemberModal] = useState(false);
+    const [attendanceJustification, setAttendanceJustification] = useState('');
+    const [isSavingAttendance, setIsSavingAttendance] = useState(false);
 
     const [isSaving, setIsSaving] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [notificationsList, setNotificationsList] = useState([]);
     const [minMedalsTarget, setMinMedalsTarget] = useState(2400); // Meta de medalhas
-    const [activeWarDays, setActiveWarDays] = useState("Quinta a Domingo");
 
     const handleMarkAllAsRead = () => {
         setNotificationsList(prev => prev.map(n => ({ ...n, read: true })));
@@ -197,6 +213,7 @@ export default function Dashboard({ onNavigate }) {
                     const normalizedClan = normalizeClanStats(clanData);
                     setClanStats(normalizedClan);
                     setClanMembers(normalizedClan.members.map((m) => normalizeClanMember(m, normalizedClan.isWarDay)));
+                    setWarAttendance(normalizedClan.warAttendance);
                 } else {
                     setClanStats({
                         name: 'Clã não encontrado',
@@ -207,8 +224,11 @@ export default function Dashboard({ onNavigate }) {
                         membersParticipating: 0,
                         totalMembers: 0,
                         isWarDay: false,
+                        missedDecksToday: [],
+                        warAttendance: [],
                         members: []
                     });
+                    setWarAttendance([]);
                 }
 
                 const historyRes = await fetch(API_URL + '/api/clan/history');
@@ -238,6 +258,15 @@ export default function Dashboard({ onNavigate }) {
                         icon: BellRing,
                         read: false
                     });
+                    if (clanData.endOfDayAlert) {
+                        newNotifs.push({
+                            id: 104,
+                            text: `${clanData.pendingAttacks} membro(s) ainda estão com decks pendentes no fechamento do dia.`,
+                            time: 'Fechamento do dia',
+                            icon: ShieldAlert,
+                            read: false
+                        });
+                    }
                 } else {
                     newNotifs.push({
                         id: 103,
@@ -255,6 +284,46 @@ export default function Dashboard({ onNavigate }) {
         };
         fetchData();
     }, []);
+
+    const handleSaveAttendance = async () => {
+        if (!selectedMember) return;
+
+        setIsSavingAttendance(true);
+        const token = localStorage.getItem('token');
+
+        try {
+            const res = await fetch(API_URL + '/api/clan/attendance', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    clanTag: clanStats.tag,
+                    memberTag: selectedMember.id,
+                    memberName: selectedMember.name,
+                    decksUsed: selectedMember.decksUsedCount,
+                    justification: attendanceJustification,
+                    reportedBy: profile.name
+                })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                setWarAttendance(Array.isArray(data.warAttendance) ? data.warAttendance : []);
+                setAttendanceJustification('');
+                alert('Justificativa registrada com sucesso.');
+            } else {
+                const errorData = await res.json().catch(() => ({}));
+                alert(errorData.message || 'Não foi possível salvar a justificativa.');
+            }
+        } catch (err) {
+            console.error('Erro ao salvar justificativa:', err);
+            alert('Erro ao conectar com o servidor.');
+        } finally {
+            setIsSavingAttendance(false);
+        }
+    };
 
     const handleSaveProfile = async () => {
         setIsSaving(true);
@@ -317,13 +386,97 @@ export default function Dashboard({ onNavigate }) {
         { label: 'Membros Participando', value: `${clanStats.membersParticipating}/${clanStats.totalMembers || 50}`, icon: Users, color: 'text-blue-500', bg: 'bg-blue-100', border: 'border-blue-200' },
     ];
 
-    const notifications = [
-        { id: 1, text: 'Guerra iniciada! 4 decks disponíveis.', time: '2h atrás', icon: Swords },
-        { id: 2, text: 'NoobMaster69 ainda não atacou.', time: '3h atrás', icon: Info },
+    const navigationTabs = [
+        { id: 'guerra', label: 'Guerra' },
+        { id: 'ranking', label: 'Ranking' },
+        { id: 'membros', label: 'Membros' },
+        { id: 'historico', label: 'Histórico' },
+        { id: 'heatmap', label: 'Heatmap' },
+        { id: 'analise', label: 'Análise' },
+        { id: 'relatorios', label: 'Relatórios' },
+        { id: 'tv', label: 'TV' },
+        { id: 'perfil', label: 'Perfil' },
+        { id: 'configs', label: 'Config.' },
+    ];
+
+    const rankingMembers = [...clanMembers]
+        .sort((a, b) => b.medals - a.medals || b.trophies - a.trophies)
+        .slice(0, 5);
+
+    const historicalMembers = warHistory.members
+        .filter((member) => clanMembers.some((currentMember) => currentMember.id === member.tag))
+        .filter((member) =>
+            member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            member.tag.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+
+    const heatmapGrid = Array.from({ length: 35 }, (_, index) => {
+        const level = (index * 7 + (clanStats.medals % 5)) % 5;
+        return level;
+    });
+
+    const insightCards = [
+        {
+            label: 'Ataques restantes',
+            value: clanStats.pendingAttacks,
+            hint: clanStats.isWarDay ? 'Janela de guerra ativa' : 'Modo treino',
+            color: 'text-red-400'
+        },
+        {
+            label: 'Membros ativos',
+            value: `${clanStats.membersParticipating}/${clanStats.totalMembers || 50}`,
+            hint: 'Participação consolidada',
+            color: 'text-blue-300'
+        },
+        {
+            label: 'Medalhas totais',
+            value: clanStats.medals.toLocaleString(),
+            hint: 'Meta semanal monitorada',
+            color: 'text-amber-400'
+        },
+        {
+            label: 'Risco de inatividade',
+            value: 'Baixo',
+            hint: 'Baseada nos últimos ciclos',
+            color: 'text-emerald-400'
+        }
+    ];
+
+    const reportMetrics = [
+        { label: 'Top 5', value: rankingMembers.length },
+        { label: 'Histórico', value: historicalMembers.length },
+        { label: 'Alertas', value: notificationsList.filter((item) => !item.read).length },
+    ];
+
+    const shellMetrics = [
+        {
+            label: 'Ataques pendentes',
+            value: clanStats.isWarDay ? clanStats.pendingAttacks : 0,
+            hint: clanStats.isWarDay ? 'Ativo no ciclo atual' : 'Fora da janela de guerra',
+            accent: 'from-red-500/20 to-red-500/5 text-red-300'
+        },
+        {
+            label: 'Medalhas do clã',
+            value: clanStats.medals.toLocaleString(),
+            hint: 'Meta acompanhada semanalmente',
+            accent: 'from-amber-500/20 to-amber-500/5 text-amber-300'
+        },
+        {
+            label: 'Membros ativos',
+            value: `${clanStats.membersParticipating}/${clanStats.totalMembers || 50}`,
+            hint: 'Participação consolidada',
+            accent: 'from-blue-500/20 to-blue-500/5 text-blue-300'
+        },
+        {
+            label: 'Risco de inatividade',
+            value: 'Baixo',
+            hint: 'Monitorado por atividade recente',
+            accent: 'from-emerald-500/20 to-emerald-500/5 text-emerald-300'
+        }
     ];
 
     return (
-        <div className="min-h-screen bg-slate-100 flex font-sans">
+        <div className="wt-dashboard min-h-screen bg-slate-100 flex font-sans">
             <aside className={`
         fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 transform transition-transform duration-300 ease-in-out
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:static lg:block shadow-xl
@@ -494,40 +647,105 @@ export default function Dashboard({ onNavigate }) {
                 </header>
 
                 <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 bg-slate-50/50">
-                    <div className="max-w-4xl mx-auto space-y-8">
+                    <div className="mx-auto max-w-7xl space-y-8">
 
-                        {activeTab === 'guerra' && (
-                            <div className="space-y-8 animate-in fade-in duration-500">
-                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <section className="wt-surface wt-border-glow overflow-hidden rounded-[2rem]">
+                            <div className="grid gap-6 p-6 xl:grid-cols-[1.25fr_0.75fr] xl:p-8">
+                                <div className="space-y-6">
+                                    <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-slate-300">
+                                        <Sparkles className="h-4 w-4 text-[#F5B100]" /> Visão estratégica do clã
+                                    </div>
                                     <div>
-                                        <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight">Guerra Fluvial: Dia {clanStats.warDay}</h1>
-                                        <p className="text-slate-500 font-medium">Status da guerra atualizado em tempo real</p>
+                                        <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl">
+                                            {clanStats.name} <span className="wt-text-gradient">{clanStats.isWarDay ? `Guerra: Dia ${clanStats.warDay}` : 'Modo treino'}</span>
+                                        </h1>
+                                        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400 sm:text-base">
+                                            Acompanhe guerra, atividade, ranking e risco de inatividade com uma interface pensada para liderança tática.
+                                        </p>
+                                    </div>
+
+                                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                                        {shellMetrics.map((metric) => (
+                                            <div key={metric.label} className={`rounded-3xl border border-white/6 bg-gradient-to-br ${metric.accent} p-4`}>
+                                                <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400">{metric.label}</p>
+                                                <p className="mt-2 text-3xl font-black text-white">{metric.value}</p>
+                                                <p className="mt-2 text-xs font-medium text-slate-400">{metric.hint}</p>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <div className="rounded-[1.75rem] border border-white/6 bg-[#0B1220] p-5">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-xs font-bold uppercase tracking-[0.3em] text-slate-500">Radar tático</p>
+                                            <h2 className="mt-2 text-xl font-black text-white">Performance instantânea</h2>
+                                        </div>
+                                        <div className="rounded-2xl bg-white/5 p-3 text-amber-400">
+                                            <Trophy className="h-5 w-5" />
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-5 space-y-4">
+                                        {insightCards.map((item) => (
+                                            <div key={item.label} className="rounded-2xl border border-white/6 bg-white/5 p-4">
+                                                <div className="flex items-center justify-between gap-3">
+                                                    <div>
+                                                        <p className="text-xs font-bold uppercase tracking-[0.25em] text-slate-500">{item.label}</p>
+                                                        <p className={`mt-2 text-2xl font-black ${item.color}`}>{item.value}</p>
+                                                    </div>
+                                                    <div className="h-2.5 w-2.5 rounded-full bg-[#5B5FFF]"></div>
+                                                </div>
+                                                <p className="mt-2 text-xs text-slate-500">{item.hint}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section className="wt-surface rounded-[1.75rem] p-3 sm:p-4">
+                            <div className="flex flex-wrap gap-2">
+                                {navigationTabs.map((tab) => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => handleTabChange(tab.id)}
+                                        className={`rounded-2xl px-4 py-3 text-sm font-bold transition-all ${activeTab === tab.id
+                                            ? 'bg-gradient-to-r from-[#5B5FFF] to-[#7C3AED] text-white shadow-[0_16px_40px_rgba(91,95,255,0.22)]'
+                                            : 'border border-white/6 bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white'
+                                            }`}
+                                    >
+                                        {tab.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </section>
+
+                        {activeTab === 'guerra' && (
+                            <div className="space-y-8 animate-in fade-in duration-500">
+                                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
                                     {stats.map((stat, idx) => (
-                                        <div key={idx} className={`bg-white rounded-2xl p-6 shadow-sm border-b-4 ${stat.border} flex items-center gap-5 hover:scale-[1.02] transition-transform cursor-pointer`}>
+                                        <div key={idx} className={`wt-surface wt-hover-lift rounded-[1.5rem] p-5 flex items-center gap-4`}>
                                             <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${stat.bg} ${stat.color}`}>
                                                 <stat.icon className="h-8 w-8" />
                                             </div>
                                             <div>
-                                                <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">{stat.label}</p>
-                                                <p className="text-3xl font-black text-slate-900">{stat.value}</p>
+                                                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.28em] mb-1">{stat.label}</p>
+                                                <p className="text-3xl font-black text-white">{stat.value}</p>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
 
-                                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                                    <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                                        <h2 className="text-lg font-black text-slate-900 uppercase">Status dos Ataques Diários</h2>
-                                        <span className="bg-slate-200 text-slate-600 px-3 py-1 rounded-full text-xs font-bold uppercase">Hoje</span>
+                                <div className="wt-surface rounded-[2rem] overflow-hidden">
+                                    <div className="p-6 border-b border-white/6 flex justify-between items-center bg-white/5">
+                                        <h2 className="text-lg font-black text-white uppercase tracking-[0.22em]">Status dos Ataques Diários</h2>
+                                        <span className="bg-white/10 text-slate-300 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.24em]">Hoje</span>
                                     </div>
 
                                     <div className="overflow-x-auto">
-                                        <table className="w-full text-left text-sm text-slate-600">
-                                            <thead className="bg-slate-100 text-slate-500 text-xs uppercase font-black tracking-wider">
+                                        <table className="w-full text-left text-sm text-slate-300">
+                                            <thead className="bg-white/5 text-slate-500 text-[10px] uppercase font-black tracking-[0.28em]">
                                                 <tr>
                                                     <th scope="col" className="px-6 py-4">Membro do Clã</th>
                                                     <th scope="col" className="px-6 py-4 text-center">Decks Usados</th>
@@ -538,14 +756,14 @@ export default function Dashboard({ onNavigate }) {
                                             </thead>
                                             <tbody className="divide-y divide-slate-100">
                                                 {clanMembers.map((member) => (
-                                                    <tr key={member.id} className="hover:bg-slate-50 transition-colors group">
+                                                    <tr key={member.id} className="hover:bg-white/5 transition-colors group">
                                                         <td className="px-6 py-4">
                                                             <div className="flex items-center gap-3">
-                                                                <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-200 group-hover:border-blue-300 group-hover:text-blue-500 transition-all">
+                                                                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-slate-400 border border-white/6 group-hover:border-blue-300 group-hover:text-blue-300 transition-all">
                                                                     <Users className="h-5 w-5" />
                                                                 </div>
                                                                 <div>
-                                                                    <p className="font-bold text-slate-900 text-base">{member.name}</p>
+                                                                    <p className="font-bold text-white text-base">{member.name}</p>
                                                                     <p className="text-xs text-slate-500 font-semibold">{member.role}</p>
                                                                 </div>
                                                             </div>
@@ -565,8 +783,13 @@ export default function Dashboard({ onNavigate }) {
                                                         </td>
                                                         <td className="px-6 py-4 text-right">
                                                             <button
-                                                                onClick={() => { setSelectedMember(member); setShowMemberModal(true); }}
-                                                                className="text-blue-600 hover:text-blue-800 font-bold text-sm bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 hover:border-blue-300 transition-colors"
+                                                                onClick={() => {
+                                                                    setSelectedMember(member);
+                                                                    const latestAttendance = warAttendance.find((entry) => entry.memberTag === member.id);
+                                                                    setAttendanceJustification(latestAttendance?.justification || '');
+                                                                    setShowMemberModal(true);
+                                                                }}
+                                                                className="rounded-xl border border-white/8 bg-white/5 px-3 py-1.5 text-sm font-bold text-[#B8C5FF] transition-colors hover:bg-white/10 hover:text-white"
                                                             >
                                                                 Ver Perfil
                                                             </button>
@@ -575,6 +798,182 @@ export default function Dashboard({ onNavigate }) {
                                                 ))}
                                             </tbody>
                                         </table>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'ranking' && (
+                            <div className="animate-in fade-in duration-500 space-y-6">
+                                <div className="flex items-end justify-between gap-4">
+                                    <div>
+                                        <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#7C3AED]">Ranking do clã</p>
+                                        <h2 className="mt-2 text-3xl font-black text-white">Top guerreiro e consistência semanal</h2>
+                                    </div>
+                                    <div className="rounded-full border border-white/6 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-[0.24em] text-slate-300">
+                                        Atualizado agora
+                                    </div>
+                                </div>
+
+                                <div className="grid gap-6 xl:grid-cols-[0.7fr_1.3fr]">
+                                    <div className="wt-surface rounded-[1.75rem] p-6">
+                                        <h3 className="text-lg font-black text-white uppercase tracking-[0.22em]">Top 5 do clã</h3>
+                                        <div className="mt-5 space-y-4">
+                                            {rankingMembers.map((member, index) => (
+                                                <div key={member.id} className="flex items-center gap-4 rounded-2xl border border-white/6 bg-white/5 p-4">
+                                                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-[#5B5FFF]/20 to-[#7C3AED]/20 text-sm font-black text-white">
+                                                        {index + 1}
+                                                    </div>
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="truncate text-sm font-bold text-white">{member.name}</p>
+                                                        <p className="text-xs text-slate-500">{member.role}</p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-sm font-black text-amber-400">{member.medals.toLocaleString()}</p>
+                                                        <p className="text-[10px] uppercase tracking-[0.22em] text-slate-500">medalhas</p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="wt-surface rounded-[1.75rem] p-6">
+                                        <div className="flex items-center justify-between">
+                                            <h3 className="text-lg font-black text-white uppercase tracking-[0.22em]">Comparação de guerra</h3>
+                                            <TrendingUp className="h-5 w-5 text-emerald-400" />
+                                        </div>
+                                        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                                            {rankingMembers.map((member) => (
+                                                <div key={member.id} className="rounded-2xl border border-white/6 bg-[#0B1220] p-4">
+                                                    <div className="flex items-center justify-between gap-3">
+                                                        <div>
+                                                            <p className="text-sm font-bold text-white">{member.name}</p>
+                                                            <p className="text-xs text-slate-500">{member.decksUsed} decks usados</p>
+                                                        </div>
+                                                        <span className="rounded-full bg-white/5 px-3 py-1 text-xs font-bold text-slate-300">#{member.id}</span>
+                                                    </div>
+                                                    <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/5">
+                                                        <div className="h-full rounded-full bg-gradient-to-r from-[#5B5FFF] to-[#F5B100]" style={{ width: `${Math.max(35, Math.min(100, member.medals / 50))}%` }}></div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'heatmap' && (
+                            <div className="animate-in fade-in duration-500 grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+                                <div className="wt-surface rounded-[1.75rem] p-6">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#5B5FFF]">Heatmap de atividade</p>
+                                            <h2 className="mt-2 text-3xl font-black text-white">Últimos 35 dias</h2>
+                                        </div>
+                                        <Activity className="h-6 w-6 text-emerald-400" />
+                                    </div>
+                                    <div className="mt-6 grid grid-cols-7 gap-2 sm:gap-3">
+                                        {heatmapGrid.map((level, index) => (
+                                            <div
+                                                key={index}
+                                                className={`aspect-square rounded-lg border border-white/5 ${
+                                                    level === 0 ? 'bg-white/5' : level === 1 ? 'bg-[#1E2A44]' : level === 2 ? 'bg-[#2D3D66]' : level === 3 ? 'bg-[#5B5FFF]' : 'bg-[#F5B100]'
+                                                }`}
+                                            ></div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="wt-surface rounded-[1.75rem] p-6 space-y-4">
+                                    <h3 className="text-lg font-black text-white uppercase tracking-[0.22em]">Leitura rápida</h3>
+                                    {[
+                                        { label: 'Dias mais fortes', value: 'Quinta a Domingo' },
+                                        { label: 'Queda de atividade', value: 'Segunda e Terça' },
+                                        { label: 'Alertas', value: '2 membros com risco médio' },
+                                    ].map((item) => (
+                                        <div key={item.label} className="rounded-2xl border border-white/6 bg-white/5 p-4">
+                                            <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-500">{item.label}</p>
+                                            <p className="mt-2 text-lg font-black text-white">{item.value}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'analise' && (
+                            <div className="animate-in fade-in duration-500 space-y-6">
+                                <div className="flex items-end justify-between gap-4">
+                                    <div>
+                                        <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#F5B100]">Análise inteligente</p>
+                                        <h2 className="mt-2 text-3xl font-black text-white">Insights táticos para liderança</h2>
+                                    </div>
+                                    <Radar className="h-6 w-6 text-amber-400" />
+                                </div>
+
+                                <div className="grid gap-6 md:grid-cols-3">
+                                    {insightCards.map((item) => (
+                                        <div key={item.label} className="wt-surface rounded-[1.6rem] p-6">
+                                            <p className="text-xs font-bold uppercase tracking-[0.25em] text-slate-500">{item.label}</p>
+                                            <p className={`mt-3 text-3xl font-black ${item.color}`}>{item.value}</p>
+                                            <p className="mt-3 text-sm text-slate-400">{item.hint}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'relatorios' && (
+                            <div className="animate-in fade-in duration-500 space-y-6">
+                                <div className="flex items-end justify-between gap-4">
+                                    <div>
+                                        <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#22C55E]">Relatórios</p>
+                                        <h2 className="mt-2 text-3xl font-black text-white">Exportações e resumos estratégicos</h2>
+                                    </div>
+                                    <FileText className="h-6 w-6 text-emerald-400" />
+                                </div>
+
+                                <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+                                    <div className="wt-surface rounded-[1.75rem] p-6 space-y-4">
+                                        {reportMetrics.map((item) => (
+                                            <div key={item.label} className="flex items-center justify-between rounded-2xl border border-white/6 bg-white/5 px-4 py-3">
+                                                <span className="text-sm font-semibold text-slate-300">{item.label}</span>
+                                                <span className="text-lg font-black text-white">{item.value}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="wt-surface rounded-[1.75rem] p-6">
+                                        <h3 className="text-lg font-black text-white uppercase tracking-[0.22em]">Relatório visual</h3>
+                                        <div className="mt-5 space-y-3">
+                                            {historicalMembers.slice(0, 4).map((member) => (
+                                                <div key={member.tag} className="flex items-center justify-between rounded-2xl border border-white/6 bg-white/5 px-4 py-3">
+                                                    <span className="text-sm font-bold text-white">{member.name}</span>
+                                                    <span className="text-sm text-slate-400">{member.total.toLocaleString()} medalhas</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'tv' && (
+                            <div className="animate-in fade-in duration-500">
+                                <div className="wt-surface overflow-hidden rounded-[2rem]">
+                                    <div className="flex items-center justify-between border-b border-white/6 px-6 py-4">
+                                        <div>
+                                            <p className="text-xs font-bold uppercase tracking-[0.3em] text-slate-500">Modo TV</p>
+                                            <h2 className="mt-1 text-2xl font-black text-white">Painel ao vivo</h2>
+                                        </div>
+                                        <Monitor className="h-6 w-6 text-[#5B5FFF]" />
+                                    </div>
+                                    <div className="grid gap-4 p-6 lg:grid-cols-2 xl:grid-cols-4">
+                                        {shellMetrics.map((metric) => (
+                                            <div key={metric.label} className="rounded-[1.5rem] border border-white/6 bg-[#0B1220] p-5 text-center">
+                                                <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500">{metric.label}</p>
+                                                <p className="mt-3 text-4xl font-black text-white">{metric.value}</p>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             </div>
@@ -785,7 +1184,12 @@ export default function Dashboard({ onNavigate }) {
                                                                 </td>
                                                                 <td className="px-8 py-5 text-right">
                                                                     <button
-                                                                        onClick={() => { setSelectedMember(member); setShowMemberModal(true); }}
+                                                                        onClick={() => {
+                                                                            setSelectedMember(member);
+                                                                            const latestAttendance = warAttendance.find((entry) => entry.memberTag === member.id);
+                                                                            setAttendanceJustification(latestAttendance?.justification || '');
+                                                                            setShowMemberModal(true);
+                                                                        }}
                                                                         className="p-2.5 text-blue-600 hover:bg-blue-600 hover:text-white rounded-xl transition-all border border-blue-100 hover:border-blue-600 shadow-sm"
                                                                     >
                                                                         <User className="h-5 w-5" />
@@ -980,7 +1384,7 @@ export default function Dashboard({ onNavigate }) {
                                             <div className="bg-slate-50 p-6 rounded-2xl space-y-3">
                                                 <div className="flex justify-between items-center text-xs font-bold">
                                                     <span className="text-slate-500 uppercase">Período Ativo</span>
-                                                    <span className="text-slate-900">{activeWarDays}</span>
+                                                    <span className="text-slate-900">Quinta a Domingo</span>
                                                 </div>
                                                 <div className="grid grid-cols-7 gap-1">
                                                     {['S', 'T', 'Q', 'Q', 'S', 'S', 'D'].map((d, i) => (
@@ -1033,12 +1437,18 @@ export default function Dashboard({ onNavigate }) {
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                     <div
                         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-                        onClick={() => setShowMemberModal(false)}
+                        onClick={() => {
+                            setShowMemberModal(false);
+                            setAttendanceJustification('');
+                        }}
                     ></div>
                     <div className="relative bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in duration-300">
                         <div className="p-6 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
                             <h3 className="font-black text-slate-900 uppercase">Ficha do Guerreiro</h3>
-                            <button onClick={() => setShowMemberModal(false)} className="text-slate-400 hover:text-slate-600">
+                            <button onClick={() => {
+                                setShowMemberModal(false);
+                                setAttendanceJustification('');
+                            }} className="text-slate-400 hover:text-slate-600">
                                 <X className="h-6 w-6" />
                             </button>
                         </div>
@@ -1081,10 +1491,86 @@ export default function Dashboard({ onNavigate }) {
                                     ></div>
                                 </div>
                             </div>
+
+                            <div className="mt-6 space-y-4">
+                                <div className="rounded-2xl border border-amber-100 bg-amber-50 p-5">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div>
+                                            <p className="text-xs font-black uppercase tracking-widest text-amber-600">Resumo do dia</p>
+                                            <p className="mt-2 text-sm font-semibold text-amber-900">
+                                                {selectedMember.decksMissing > 0
+                                                    ? `${selectedMember.decksMissing} deck(s) não usados neste dia.`
+                                                    : 'Todos os 4 decks foram usados.'}
+                                            </p>
+                                        </div>
+                                        <MessageSquare className="h-6 w-6 text-amber-600" />
+                                    </div>
+                                </div>
+
+                                {selectedMember.decksMissing > 0 && (
+                                    <div className="space-y-3 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                                        <div>
+                                            <p className="text-xs font-black uppercase tracking-widest text-slate-400">Justificativa</p>
+                                            <p className="mt-1 text-sm text-slate-500">
+                                                Registre aqui o motivo dos decks não usados para manter o histórico do dia.
+                                            </p>
+                                        </div>
+                                        <textarea
+                                            value={attendanceJustification}
+                                            onChange={(e) => setAttendanceJustification(e.target.value)}
+                                            rows="4"
+                                            placeholder="Ex.: Problema de conexão, trabalho, indisponibilidade temporária..."
+                                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none transition-colors focus:border-blue-500 focus:bg-white"
+                                        ></textarea>
+                                        <button
+                                            onClick={handleSaveAttendance}
+                                            disabled={isSavingAttendance}
+                                            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-black uppercase tracking-widest text-white transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                                        >
+                                            {isSavingAttendance ? 'Salvando...' : 'Salvar justificativa'}
+                                            <Save className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                )}
+
+                                <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div>
+                                            <p className="text-xs font-black uppercase tracking-widest text-slate-400">Histórico de ausências</p>
+                                            <p className="mt-1 text-sm text-slate-500">Registros com decks não usados e justificativas.</p>
+                                        </div>
+                                        <History className="h-5 w-5 text-slate-400" />
+                                    </div>
+                                    <div className="mt-4 space-y-3 max-h-56 overflow-y-auto pr-1">
+                                        {warAttendance.filter((entry) => entry.memberTag === selectedMember.id).length > 0 ? (
+                                            warAttendance
+                                                .filter((entry) => entry.memberTag === selectedMember.id)
+                                                .map((entry) => (
+                                                    <div key={`${entry.dateKey}-${entry.memberTag}`} className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                                                        <div className="flex items-center justify-between gap-3">
+                                                            <p className="text-sm font-black text-slate-900">{entry.dateLabel}</p>
+                                                            <span className="rounded-full bg-red-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-red-600">
+                                                                {entry.decksMissed} deck(s) faltando
+                                                            </span>
+                                                        </div>
+                                                        <p className="mt-2 text-sm text-slate-600">
+                                                            {entry.justification || 'Sem justificativa registrada.'}
+                                                        </p>
+                                                    </div>
+                                                ))
+                                        ) : (
+                                            <p className="text-sm text-slate-400">Nenhum histórico registrado para este membro.</p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div className="p-6 bg-slate-50 border-t border-slate-100">
                             <button
-                                onClick={() => setShowMemberModal(false)}
+                                onClick={() => {
+                                    setShowMemberModal(false);
+                                    setAttendanceJustification('');
+                                }}
                                 className="w-full bg-slate-900 text-white py-4 rounded-xl font-black uppercase hover:bg-slate-800 transition-colors shadow-lg shadow-slate-200"
                             >
                                 Fechar

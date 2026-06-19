@@ -1,135 +1,222 @@
 import React, { useState } from 'react';
-import { Crown, Swords, Users, Menu, X, Flame, Target, History } from 'lucide-react';
+import { Crown, Swords, Users, Menu, X, Flame, Target, History, ShieldCheck, Sparkles, ChevronRight, Bell, Trophy, Activity, Radar, ArrowRight } from 'lucide-react';
+
+const featureCards = [
+    { icon: Target, title: 'Controle de guerra', desc: 'Ataques pendentes, decks usados e progresso estratégico em tempo real.' },
+    { icon: Users, title: 'Leitura do clã', desc: 'Membros ativos, cargos e histórico organizados sem poluição visual.' },
+    { icon: History, title: 'Memória tática', desc: 'Histórico filtrado para destacar o que realmente importa para a liderança.' },
+    { icon: ShieldCheck, title: 'Acesso seguro', desc: 'Somente líderes e co-líderes entram no painel após validação pela API oficial.' }
+];
+
+const metrics = [
+    { label: 'Medalhas', value: '32.850', accent: 'text-amber-400' },
+    { label: 'Ativos', value: '42/50', accent: 'text-blue-300' },
+    { label: 'Risco', value: 'Baixo', accent: 'text-emerald-400' },
+];
 
 export default function LandingPage({ onNavigate }) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     return (
-        <div className="flex flex-col min-h-screen scroll-smooth">
-            <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center h-16">
-                        <div className="flex items-center gap-2 text-blue-600">
-                            <Crown className="h-8 w-8 text-amber-500 fill-amber-500" />
-                            <span className="font-extrabold text-xl tracking-tight text-slate-800">WarTracker</span>
+        <div className="relative min-h-screen overflow-hidden bg-[#080B14] text-slate-100">
+            <div className="pointer-events-none absolute inset-0 wt-grid opacity-30"></div>
+            <div className="pointer-events-none absolute -top-24 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-[rgba(91,95,255,0.22)] blur-3xl"></div>
+            <div className="pointer-events-none absolute top-1/3 right-0 h-80 w-80 rounded-full bg-[rgba(124,58,237,0.18)] blur-3xl"></div>
+
+            <header className="sticky top-0 z-50 border-b border-white/5 bg-[#080B14]/80 backdrop-blur-2xl">
+                <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 via-amber-500 to-orange-600 shadow-[0_10px_30px_rgba(245,177,0,0.25)]">
+                            <Crown className="h-6 w-6 text-[#080B14] fill-[#080B14]" />
                         </div>
-
-                        <nav className="hidden md:flex items-center gap-8">
-                            <a href="#recursos" className="text-slate-600 hover:text-blue-600 font-medium transition-colors">Recursos</a>
-                            <a href="#sobre" className="text-slate-600 hover:text-blue-600 font-medium transition-colors">O Projeto</a>
-                            <button
-                                onClick={() => onNavigate('login')}
-                                className="bg-blue-600 text-white px-5 py-2.5 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm border-b-4 border-blue-800 active:border-b-0 active:translate-y-1"
-                            >
-                                Acessar QG do Clã
-                            </button>
-                        </nav>
-
-                        <button
-                            className="md:hidden p-2 text-slate-600"
-                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                        >
-                            {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-                        </button>
+                        <div>
+                            <p className="text-xs font-bold uppercase tracking-[0.35em] text-slate-400">WarTracker</p>
+                            <p className="text-sm font-semibold text-slate-200">Painel inteligente para líderes de clãs</p>
+                        </div>
                     </div>
+
+                    <nav className="hidden items-center gap-2 md:flex">
+                        <a href="#sobre" className="rounded-full px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-white/5 hover:text-white">O Projeto</a>
+                        <a href="#recursos" className="rounded-full px-4 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-white/5 hover:text-white">Recursos</a>
+                        <button
+                            onClick={() => onNavigate('login')}
+                            className="ml-2 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#5B5FFF] to-[#7C3AED] px-5 py-2.5 text-sm font-bold text-white shadow-[0_18px_40px_rgba(91,95,255,0.25)] transition-transform hover:-translate-y-0.5"
+                        >
+                            Acessar painel <ChevronRight className="h-4 w-4" />
+                        </button>
+                    </nav>
+
+                    <button
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-slate-100 md:hidden"
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    >
+                        {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                    </button>
                 </div>
 
                 {isMobileMenuOpen && (
-                    <div className="md:hidden bg-white border-t border-slate-100 p-4 space-y-4 shadow-lg">
-                        <a href="#recursos" className="block text-slate-600 font-medium">Recursos</a>
-                        <a href="#sobre" className="block text-slate-600 font-medium">O Projeto</a>
-                        <button
-                            onClick={() => onNavigate('login')}
-                            className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg font-bold border-b-4 border-blue-800 active:border-b-0 active:translate-y-1"
-                        >
-                            Acessar QG do Clã
-                        </button>
+                    <div className="border-t border-white/5 bg-[#0D1320]/95 px-4 py-4 backdrop-blur-xl md:hidden">
+                        <div className="mx-auto max-w-7xl space-y-3">
+                            <a href="#sobre" className="block rounded-2xl border border-white/5 bg-white/5 px-4 py-3 text-sm font-medium text-slate-200">O Projeto</a>
+                            <a href="#recursos" className="block rounded-2xl border border-white/5 bg-white/5 px-4 py-3 text-sm font-medium text-slate-200">Recursos</a>
+                            <button
+                                onClick={() => onNavigate('login')}
+                                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#5B5FFF] to-[#7C3AED] px-4 py-3 text-sm font-bold text-white"
+                            >
+                                Acessar painel <ArrowRight className="h-4 w-4" />
+                            </button>
+                        </div>
                     </div>
                 )}
             </header>
 
-            <main className="flex-grow">
-                <section className="relative overflow-hidden bg-slate-900 pt-16 pb-32 text-white">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                        <div className="text-center max-w-3xl mx-auto">
-                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-900/50 text-blue-300 font-semibold mb-6 border border-blue-700">
-                                <Flame className="h-4 w-4 text-amber-500" /> A melhor ferramenta para Líderes
+            <main>
+                <section className="relative overflow-hidden">
+                    <div className="mx-auto grid min-h-[calc(100vh-5rem)] max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:px-8 lg:py-20">
+                        <div className="relative z-10 space-y-8">
+                            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.28em] text-slate-300">
+                                <Flame className="h-4 w-4 text-amber-400" /> Dashboard estratégico premium
                             </div>
-                            <h1 className="text-4xl md:text-6xl font-black tracking-tight mb-6 uppercase">
-                                Domine as Guerras e <span className="text-amber-400">Alcance o Topo</span>
-                            </h1>
-                            <p className="text-lg md:text-xl text-slate-300 mb-10 leading-relaxed font-medium">
-                                Monitore os ataques do seu clã, cobre os membros inativos e garanta o baú lendário toda semana com o nosso painel de gestão focado em vitórias.
-                            </p>
-                            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+
+                            <div className="space-y-5 max-w-3xl">
+                                <h1 className="text-5xl font-black tracking-tight text-white sm:text-6xl lg:text-7xl">
+                                    Controle o clã como uma{' '}
+                                    <span className="wt-text-gradient">operação tática</span>
+                                </h1>
+                                <p className="max-w-2xl text-base leading-relaxed text-slate-300 sm:text-lg">
+                                    O WarTracker combina estética premium, leitura rápida de guerra e organização de liderança para transformar dados em decisão estratégica.
+                                </p>
+                            </div>
+
+                            <div className="flex flex-col gap-3 sm:flex-row">
                                 <button
                                     onClick={() => onNavigate('login')}
-                                    className="bg-amber-500 text-slate-900 px-8 py-4 rounded-xl font-black text-lg hover:bg-amber-400 transition-all shadow-lg border-b-4 border-amber-700 active:border-b-0 active:translate-y-1 flex items-center justify-center gap-2 uppercase"
+                                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#F5B100] to-[#F7C94D] px-7 py-4 text-sm font-black uppercase tracking-[0.24em] text-[#080B14] shadow-[0_24px_50px_rgba(245,177,0,0.18)] transition-transform hover:-translate-y-0.5"
                                 >
-                                    Criar Painel do Clã <Swords className="h-6 w-6" />
+                                    Entrar no QG <Swords className="h-5 w-5" />
                                 </button>
+                                <a
+                                    href="#sobre"
+                                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-7 py-4 text-sm font-bold uppercase tracking-[0.24em] text-slate-100 transition-colors hover:bg-white/10"
+                                >
+                                    Ver conceito <Sparkles className="h-5 w-5 text-amber-400" />
+                                </a>
+                            </div>
+
+                            <div className="grid max-w-2xl grid-cols-3 gap-4">
+                                {metrics.map((metric) => (
+                                    <div key={metric.label} className="wt-surface rounded-3xl p-4">
+                                        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500">{metric.label}</p>
+                                        <p className={`mt-2 text-2xl font-black ${metric.accent}`}>{metric.value}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="relative z-10">
+                            <div className="wt-surface wt-border-glow rounded-[2rem] p-4 sm:p-5">
+                                <div className="rounded-[1.5rem] border border-white/5 bg-[#0B1220] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                                    <div className="mb-4 flex items-center justify-between">
+                                        <div>
+                                            <p className="text-xs font-bold uppercase tracking-[0.3em] text-slate-500">Visão operacional</p>
+                                            <h2 className="mt-1 text-xl font-black text-white">WarRoom live</h2>
+                                        </div>
+                                        <div className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-400">
+                                            Online
+                                        </div>
+                                    </div>
+
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                        {[
+                                            { label: 'Ataques pendentes', value: '8', color: 'text-red-400', icon: Swords },
+                                            { label: 'Membros ativos', value: '42/50', color: 'text-blue-300', icon: Users },
+                                            { label: 'Medalhas do clã', value: '32.850', color: 'text-amber-400', icon: Trophy },
+                                            { label: 'Risco inatividade', value: 'Baixo', color: 'text-emerald-400', icon: Radar },
+                                        ].map((item) => (
+                                            <div key={item.label} className="rounded-2xl border border-white/6 bg-white/5 p-4">
+                                                <div className="mb-4 flex items-center justify-between">
+                                                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-500">{item.label}</p>
+                                                    <item.icon className="h-4 w-4 text-slate-400" />
+                                                </div>
+                                                <p className={`text-2xl font-black ${item.color}`}>{item.value}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="mt-4 rounded-2xl border border-white/5 bg-gradient-to-r from-[#111A2A] to-[#0D1422] p-4">
+                                        <div className="mb-3 flex items-center justify-between text-xs font-bold uppercase tracking-[0.28em] text-slate-500">
+                                            <span>Progresso de guerra</span>
+                                            <span>Dia 2 de 2</span>
+                                        </div>
+                                        <div className="h-3 overflow-hidden rounded-full bg-white/5">
+                                            <div className="h-full w-[82%] rounded-full bg-gradient-to-r from-[#5B5FFF] via-[#7C3AED] to-[#F5B100]"></div>
+                                        </div>
+                                        <div className="mt-4 grid grid-cols-3 gap-3">
+                                            {['Shadow', 'Goku', 'Lucas'].map((member, index) => (
+                                                <div key={member} className="rounded-2xl border border-white/5 bg-black/20 p-3">
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <span className="text-sm font-semibold text-slate-200">{member}</span>
+                                                        <span className={`h-2.5 w-2.5 rounded-full ${index === 0 ? 'bg-emerald-400' : index === 1 ? 'bg-amber-400' : 'bg-red-400'}`}></span>
+                                                    </div>
+                                                    <p className="mt-2 text-xs text-slate-500">{index === 2 ? '1 ataque restante' : 'Ataques concluídos'}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-
-                    <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 rounded-full bg-blue-600 opacity-20 blur-3xl"></div>
-                    <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 rounded-full bg-amber-600 opacity-20 blur-3xl"></div>
                 </section>
 
-                <section id="sobre" className="py-20 bg-white border-y border-slate-200">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="text-center max-w-3xl mx-auto mb-14">
-                            <p className="text-xs font-black uppercase tracking-[0.35em] text-blue-600 mb-4">O Projeto</p>
-                            <h2 className="text-3xl md:text-4xl font-black text-slate-900 uppercase tracking-tight">
-                                Um painel para organizar o clã sem ruído desnecessário
+                <section id="sobre" className="border-y border-white/5 bg-[#0A1020]/90 py-20">
+                    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                        <div className="mx-auto mb-14 max-w-3xl text-center">
+                            <p className="text-xs font-bold uppercase tracking-[0.35em] text-[#5B5FFF]">O Projeto</p>
+                            <h2 className="mt-4 text-3xl font-black text-white sm:text-4xl">
+                                Uma interface para liderar o clã com leitura rápida e controle total
                             </h2>
-                            <p className="mt-4 text-slate-600 font-medium leading-relaxed">
-                                O WarTracker centraliza guerras, histórico e membros ativos em um painel simples, deixando visível só o que importa para a liderança.
+                            <p className="mt-4 text-base leading-relaxed text-slate-300">
+                                O WarTracker foi pensado para líderes que precisam de um painel com presença, clareza e hierarquia visual, sem ficar preso em uma UI genérica de admin.
                             </p>
                         </div>
 
-                        <div className="grid md:grid-cols-3 gap-6">
-                            <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200 shadow-sm">
-                                <h3 className="font-black text-slate-900 uppercase tracking-tight mb-3">Visão rápida</h3>
-                                <p className="text-slate-600 font-medium leading-relaxed">
-                                    Veja ataques pendentes, participação e desempenho semanal em uma única tela.
-                                </p>
-                            </div>
-                            <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200 shadow-sm">
-                                <h3 className="font-black text-slate-900 uppercase tracking-tight mb-3">Menos poluição</h3>
-                                <p className="text-slate-600 font-medium leading-relaxed">
-                                    Ex-membros e dados antigos são filtrados para evitar ruído no histórico do clã.
-                                </p>
-                            </div>
-                            <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200 shadow-sm">
-                                <h3 className="font-black text-slate-900 uppercase tracking-tight mb-3">Acesso simples</h3>
-                                <p className="text-slate-600 font-medium leading-relaxed">
-                                    O login valida o cargo via API oficial e libera o painel só para líderes e co-líderes.
-                                </p>
-                            </div>
+                        <div className="grid gap-6 md:grid-cols-3">
+                            {[
+                                { title: 'Visão estratégica', desc: 'Um painel que destaca guerra, ranking e risco sem poluir a leitura.' },
+                                { title: 'Identidade gamer premium', desc: 'Dark mode, brilho sutil, profundidade e sensação de produto de alto valor.' },
+                                { title: 'Menos ruído, mais decisão', desc: 'Informações órfãs e dados desnecessários ficam fora do foco principal.' },
+                            ].map((item) => (
+                                <div key={item.title} className="wt-surface wt-hover-lift rounded-[1.75rem] p-6">
+                                    <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5 text-[#F5B100]">
+                                        <Activity className="h-6 w-6" />
+                                    </div>
+                                    <h3 className="text-xl font-black text-white">{item.title}</h3>
+                                    <p className="mt-3 text-sm leading-relaxed text-slate-300">{item.desc}</p>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </section>
 
-                <section id="recursos" className="py-20 bg-slate-50">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="text-center mb-16">
-                            <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight">Estratégia Impecável</h2>
-                            <p className="mt-4 text-slate-600 font-medium">Chega de perder a corrida fluvial por causa de ataques esquecidos.</p>
+                <section id="recursos" className="py-20">
+                    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                        <div className="mb-10 flex flex-col gap-3 text-center">
+                            <p className="text-xs font-bold uppercase tracking-[0.35em] text-[#7C3AED]">Recursos</p>
+                            <h2 className="text-3xl font-black text-white sm:text-4xl">Componentes com presença e utilidade real</h2>
+                            <p className="mx-auto max-w-2xl text-sm leading-relaxed text-slate-400">
+                                Cada bloco visual foi desenhado para reforçar hierarquia, leitura rápida e sensação de comando.
+                            </p>
                         </div>
 
-                        <div className="grid md:grid-cols-3 gap-8">
-                            {[
-                                { icon: Target, title: 'Monitoramento de Ataques', desc: 'Saiba exatamente quem já usou os 4 decks diários e quem está devendo ataques no rio.' },
-                                { icon: Users, title: 'Gestão de Membros', desc: 'Identifique rapidamente os sanguessugas e promova os membros que mais colaboram com o clã.' },
-                                { icon: History, title: 'Histórico de Desempenho', desc: 'Analise o ganho de medalhas de cada jogador ao longo das semanas de guerra.' }
-                            ].map((feature, idx) => (
-                                <div key={idx} className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md hover:border-blue-300 transition-all">
-                                    <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center text-blue-600 mb-6 border-b-4 border-slate-200">
-                                        <feature.icon className="h-7 w-7" />
+                        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+                            {featureCards.map((feature, index) => (
+                                <div key={feature.title} className="wt-surface wt-hover-lift rounded-[1.65rem] p-6">
+                                    <div className={`mb-5 flex h-14 w-14 items-center justify-center rounded-2xl ${index === 0 ? 'bg-blue-500/10 text-blue-300' : index === 1 ? 'bg-violet-500/10 text-violet-300' : index === 2 ? 'bg-amber-500/10 text-amber-300' : 'bg-emerald-500/10 text-emerald-300'}`}>
+                                        <feature.icon className="h-6 w-6" />
                                     </div>
-                                    <h3 className="text-xl font-bold text-slate-900 mb-3">{feature.title}</h3>
-                                    <p className="text-slate-600 font-medium leading-relaxed">{feature.desc}</p>
+                                    <h3 className="text-lg font-black text-white">{feature.title}</h3>
+                                    <p className="mt-3 text-sm leading-relaxed text-slate-400">{feature.desc}</p>
                                 </div>
                             ))}
                         </div>
@@ -137,14 +224,13 @@ export default function LandingPage({ onNavigate }) {
                 </section>
             </main>
 
-            <footer className="bg-slate-950 text-slate-400 py-8">
-
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center flex flex-col items-center">
-                    <div className="flex justify-center items-center gap-2 mb-4">
-                        <Crown className="h-6 w-6 text-amber-500 fill-amber-500" />
-                        <span className="font-bold text-xl text-slate-200 tracking-tight">WarTracker</span>
+            <footer className="border-t border-white/5 bg-[#060910] py-8">
+                <div className="mx-auto flex max-w-7xl flex-col items-center gap-3 px-4 text-center sm:px-6 lg:px-8">
+                    <div className="flex items-center gap-2">
+                        <Crown className="h-6 w-6 fill-amber-400 text-amber-400" />
+                        <span className="text-lg font-black tracking-tight text-white">WarTracker</span>
                     </div>
-                    <p className="text-sm font-medium">© 2026 WarTracker. Não afiliado à Supercell.</p>
+                    <p className="text-sm text-slate-500">© 2026 WarTracker. Não afiliado à Supercell.</p>
                 </div>
             </footer>
         </div>

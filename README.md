@@ -1,67 +1,185 @@
-# 🏆 WarTracker - QG de Elite para Guerras de Clã
+# WarTracker
 
-O **WarTracker** é o centro de comando definitivo para Líderes e Colíderes de clãs no **Clash Royale**. Projetado para maximizar o desempenho na Corrida Fluvial (Guerra de Clãs 2), o sistema oferece uma visão tática em tempo real e análise histórica profunda para garantir que seu clã sempre conquiste o primeiro lugar.
+O **WarTracker** é um painel para liderança de clãs do **Clash Royale**. Ele centraliza login, visão de guerra, histórico, membros, preferências de usuário e informações do clã em uma interface única, com foco em organizar o time e reduzir ruído visual no acompanhamento das guerras.
 
-![Aesthetics Notice](https://img.shields.io/badge/Aesthetics-Premium-blueviolet?style=for-the-badge)
-![Tech Stack](https://img.shields.io/badge/Stack-React%20%7C%20Node%20%7C%20PostgreSQL-blue?style=for-the-badge)
+## Finalidade
 
-## ✨ Funcionalidades Principais
+O objetivo do projeto é ajudar líderes e co-líderes a:
 
-*   **📊 Monitoramento de Guerra em Tempo Real**: 
-    *   Acompanhe o uso dos 4 decks diários de cada membro.
-    *   Sincronização inteligente: Ataques pendentes exibidos apenas de **Quinta a Domingo** (ciclo oficial).
-    *   Status automáticos: `Pendente`, `Em Batalha` ou `Concluído`.
+1. acompanhar a guerra atual e os ataques pendentes;
+2. visualizar membros ativos e desempenho do clã;
+3. consultar histórico de guerras sem poluir a tela com dados irrelevantes;
+4. controlar preferências do usuário e acesso ao painel;
+5. usar uma interface simples para consulta rápida no dia a dia do clã.
 
-*   **📈 Histórico de Guerras (Filtrado)**:
-    *   Tabela de desempenho das últimas 10 semanas.
-    *   **Filtro de Elite**: Exibe apenas os 50 membros que estão atualmente no clã, facilitando a tomada de decisão.
-    *   Cálculo automático de rankings, medalhas totais e médias semanais.
+## Como o projeto é desenvolvido
 
-*   **⚙️ Configurações do QG**:
-    *   **Meta de Medalhas Dinâmica**: Ajuste o mínimo esperado (ex: 2400) e veja a tabela de histórico destacar em vermelho quem não atingiu o objetivo.
-    *   **Agenda de Guerra**: Visualização clara do status atual (Treino vs. Guerra).
+O projeto é dividido em duas partes:
 
-*   **📱 Responsividade & Mobilidade**:
-    *   Interface totalmente otimizada para celulares com colunas fixas para navegação em tabelas grandes.
-    *   **Gerar Relatório**: Gere um PDF limpo e formatado para impressão com um clique.
-    *   **Enviar Top 5**: Compartilhe o ranking dos melhores guerreiros diretamente no WhatsApp com formatação automática.
+- `backend/`: API em Node.js com Express e MongoDB/Mongoose.
+- `frontend/`: aplicação em React com Vite, Tailwind CSS e Lucide Icons.
 
-## 🛠️ Tecnologia & Performance
+O fluxo funciona assim:
 
-*   **Frontend**: 
-    *   [React](https://reactjs.org/) + [Vite](https://vitejs.dev/) para velocidade extrema.
-    *   [Tailwind CSS](https://tailwindcss.com/) com design premium e animações suaves.
-    *   [Lucide Icons](https://lucide.dev/) para uma interface intuitiva.
-*   **Backend**: 
-    *   [Node.js](https://nodejs.org/) & [Express](https://expressjs.com/).
-    *   [PostgreSQL](https://www.postgresql.org/) para persistência de dados e histórico de longo prazo.
-    *   Integração direta com a **Supercell API**.
-*   **Segurança**: 
-    *   Autenticação via **JWT** (JSON Web Tokens).
-    *   Proteção de rotas e gestão de preferências de usuário.
+1. o usuário acessa a landing page;
+2. faz login informando a tag do jogador;
+3. o backend consulta a API do Clash Royale;
+4. se o jogador for líder ou co-líder do clã monitorado, um JWT é gerado;
+5. o frontend salva o token e carrega o dashboard;
+6. o dashboard busca dados do perfil, preferências, estatísticas do clã e histórico de guerras.
 
-## 📁 Estrutura do Repositório
+## Funcionalidades
 
-*   `frontend/`: Interface visual e lógica do cliente.
-*   `backend/`: API REST, controladores de clã, modelos de dados e utilitários da API Royale.
+### Landing page
 
-## 🚀 Como Iniciar
+- Hero principal com chamada para o painel.
+- Seção **O Projeto** explicando a proposta do WarTracker.
+- Seção **Recursos** apresentando os blocos principais do sistema.
+- Menu responsivo para desktop e mobile.
 
-### Variáveis de Ambiente (`backend/.env`)
-Crie um arquivo `.env` na pasta backend com:
-```env
-PORT=5000
-DATABASE_URL=postgres://usuario:senha@localhost:5432/nome_do_banco
-JWT_SECRET=seu_segredo_jwt
-CLASH_ROYALE_API_KEY=sua_chave_da_supercell_aqui
-CLASH_ROYALE_BASE_URL=https://api.clashroyale.com/v1
-CLAN_TAG="#SUA_TAG_AQUI"
+### Autenticação
+
+- Login por tag do jogador.
+- Validação de cargo via API oficial do Clash Royale.
+- Restrição de acesso para líderes e co-líderes.
+- Geração de token JWT para manter a sessão.
+
+### Dashboard
+
+- Visão da guerra atual do clã.
+- Total de medalhas do clã.
+- Quantidade de ataques pendentes.
+- Quantidade de membros participando.
+- Lista de membros com status formatado.
+- Histórico de guerra com dados normalizados.
+- Preferências do usuário.
+- Busca visual por membro.
+- Ações de imprimir e compartilhar ranking.
+
+### Limpeza de dados e organização
+
+- Normalização de respostas entre frontend e backend.
+- Filtragem de ex-membros para reduzir poluição no histórico.
+- Tratamento de tags com padronização para evitar diferenças de formatação.
+
+## Stack utilizada
+
+### Frontend
+
+- React 19
+- Vite
+- Tailwind CSS
+- Lucide React
+
+### Backend
+
+- Node.js
+- Express
+- MongoDB
+- Mongoose
+- JWT
+- CORS
+- Axios
+- bcryptjs
+
+## Estrutura do projeto
+
+```text
+backend/
+    config/
+        database.js
+    controllers/
+        clanController.js
+    middleware/
+        auth.js
+    models/
+        Clan.js
+        User.js
+    routes/
+        auth.js
+        clan.js
+        user.js
+    utils/
+        crApi.js
+    seed.js
+    server.js
+
+frontend/
+    src/
+        components/
+            Dashboard.jsx
+            LandingPage.jsx
+            LoginPage.jsx
+        App.jsx
+        main.jsx
+        App.css
+        index.css
 ```
 
-### Execução
-1. Instale as dependências: `npm install` em ambas as pastas (`frontend` e `backend`).
-2. Backend: `cd backend && npm run dev`
-3. Frontend: `cd frontend && npm run dev`
+## API do backend
 
----
-**Aviso Legal**: Este projeto é uma ferramenta de fã e não é afiliado à Supercell. Os ativos do jogo pertencem aos seus respectivos donos.
+### Autenticação
+
+- `POST /api/auth/login`
+
+### Clã
+
+- `GET /api/clan/stats`
+- `GET /api/clan/history`
+
+### Usuário
+
+- `GET /api/user/profile`
+- `PUT /api/user/profile`
+- `GET /api/user/preferences`
+- `PUT /api/user/preferences`
+
+## Variáveis de ambiente
+
+Crie o arquivo `backend/.env` com algo neste formato:
+
+```env
+PORT=5000
+MONGODB_URI=sua_string_de_conexao_do_mongodb
+JWT_SECRET=seu_segredo_jwt
+CLAN_TAG=#SUA_TAG_AQUI
+```
+
+Se você for rodar o frontend localmente, o endereço padrão da API é `http://localhost:5000`.
+
+## Como executar
+
+### 1. Instalar dependências
+
+```bash
+cd backend && npm install
+cd ../frontend && npm install
+```
+
+### 2. Rodar o backend
+
+```bash
+cd backend
+npm run dev
+```
+
+### 3. Rodar o frontend
+
+```bash
+cd frontend
+npm run dev
+```
+
+## Observações importantes
+
+- O backend se conecta ao MongoDB antes de subir o servidor.
+- O frontend foi preparado para consumir respostas com formatos diferentes de `_id`, `id`, `tag` e `clanTag`.
+- O CORS do backend inclui portas comuns do Vite, como `5173` e `4173`.
+
+## Para quem este projeto foi feito
+
+Este projeto foi pensado para pessoas que administram clãs e precisam de um painel direto para acompanhar guerra, membros e histórico sem depender de planilhas ou conferência manual constante.
+
+## Aviso legal
+
+Este projeto é uma ferramenta de fã e não é afiliado à Supercell. Os nomes, marcas e ativos do jogo pertencem aos seus respectivos donos.
