@@ -14,6 +14,26 @@ const getDateLabel = (date = new Date()) => date.toLocaleDateString('pt-BR', {
     year: 'numeric'
 });
 
+const ensureClanRecord = async ({ clanTag, clanName, medals, members }) => {
+    const update = {
+        $set: {
+            name: clanName,
+            medals: Number(medals || 0),
+            members: Array.isArray(members) ? members : []
+        },
+        $setOnInsert: {
+            tag: clanTag,
+            warAttendance: []
+        }
+    };
+
+    return Clan.findOneAndUpdate(
+        { tag: clanTag },
+        update,
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+};
+
 exports.getClanStats = async (req, res) => {
     let clanTag = normalizeTag(req.query.tag || process.env.CLAN_TAG || '#L98JQV');
     console.log('Buscando dados para a Tag:', clanTag);
@@ -61,6 +81,13 @@ exports.getClanStats = async (req, res) => {
                 decksMissed: Math.max(0, 4 - Number(member.decksUsed || 0))
             }));
 
+        await ensureClanRecord({
+            clanTag: apiClan.tag,
+            clanName: apiClan.name,
+            medals: riverRace.clan?.fame || riverRace.clan?.periodPoints || 0,
+            members: apiClan.memberList || []
+        });
+
         res.json({
             name: apiClan.name,
             tag: apiClan.tag,
@@ -98,6 +125,7 @@ exports.getClanStats = async (req, res) => {
 
 exports.saveWarAttendance = async (req, res) => {
     const clanTag = normalizeTag(req.body.clanTag || req.query.tag || process.env.CLAN_TAG || '#L98JQV');
+    const clanName = String(req.body.clanName || '').trim();
     const memberTag = normalizeTag(req.body.memberTag);
     const memberName = String(req.body.memberName || '').trim();
     const justification = String(req.body.justification || '').trim();
@@ -113,7 +141,12 @@ exports.saveWarAttendance = async (req, res) => {
     }
 
     try {
-        const clan = await Clan.findOne({ tag: clanTag });
+        const clan = await ensureClanRecord({
+            clanTag,
+            clanName: clanName || clanTag,
+            medals: 0,
+            members: []
+        });
         if (!clan) {
             return res.status(404).json({ message: 'Clã não encontrado para registrar a justificativa.' });
         }
