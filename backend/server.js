@@ -18,6 +18,16 @@ app.use(cors({
 }));
 app.use(express.json());
 
+app.use(async (req, res, next) => {
+    try {
+        await connectDatabase();
+        next();
+    } catch (err) {
+        console.error('Could not connect to MongoDB', err);
+        res.status(500).json({ message: 'Could not connect to database' });
+    }
+});
+
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/clan', require('./routes/clan'));
 app.use('/api/user', require('./routes/user'));
@@ -40,5 +50,8 @@ async function startServer() {
     }
 }
 
-startServer();
+if (require.main === module) {
+    startServer();
+}
 
+module.exports = app;

@@ -35,7 +35,7 @@ import {
     MessageSquare
 } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || 'https://clan-war-yyeq-293jzglkg-oliverws7s-projects.vercel.app';
 
 const defaultPreferences = {
     notifications: true,

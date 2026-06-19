@@ -3,6 +3,13 @@ const router = express.Router();
 const User = require('../models/User');
 const auth = require('../middleware/auth');
 
+router.get('/', (req, res) => {
+    res.json({
+        message: 'User API is running',
+        endpoints: ['/api/user/profile', '/api/user/preferences']
+    });
+});
+
 // GET Profile
 router.get('/profile', auth, async (req, res) => {
     try {
