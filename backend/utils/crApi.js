@@ -1,15 +1,20 @@
 const axios = require('axios');
 require('dotenv').config();
 
+const baseURL = (process.env.CLASH_ROYALE_BASE_URL || 'https://api.clashroyale.com/v1').replace(/\/+$/, '');
+
 const crApi = axios.create({
-    baseURL: process.env.CLASH_ROYALE_BASE_URL,
+    baseURL,
     headers: {
         'Authorization': `Bearer ${process.env.CLASH_ROYALE_API_KEY}`
     }
 });
 
 const encodeTag = (tag) => {
-    return tag.startsWith('#') ? tag.replace('#', '%23') : `%23${tag}`;
+    const normalizedTag = String(tag || '').trim();
+    const tagWithHash = normalizedTag.startsWith('#') ? normalizedTag : `#${normalizedTag}`;
+
+    return encodeURIComponent(tagWithHash);
 };
 
 exports.getClan = async (clanTag) => {
@@ -53,4 +58,3 @@ exports.getPlayer = async (playerTag) => {
 };
 
 module.exports = exports;
-
