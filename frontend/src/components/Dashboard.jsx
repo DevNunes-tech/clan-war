@@ -37,6 +37,19 @@ import {
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://clan-war-yyeq-293jzglkg-oliverws7s-projects.vercel.app';
 
+const getAuthHeaders = (extraHeaders = {}) => {
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+        return null;
+    }
+
+    return {
+        ...extraHeaders,
+        Authorization: `Bearer ${token}`
+    };
+};
+
 const defaultPreferences = {
     notifications: true,
     dmAlerts: true,
@@ -280,8 +293,12 @@ export default function Dashboard({ onNavigate }) {
         }
 
         const fetchData = async () => {
-            const token = localStorage.getItem('token');
-            const headers = { 'Authorization': `Bearer ${token}` };
+            const headers = getAuthHeaders();
+
+            if (!headers) {
+                onNavigate('login');
+                return;
+            }
 
             try {
                 const profileRes = await fetch(API_URL + '/api/user/profile', { headers });
@@ -297,6 +314,7 @@ export default function Dashboard({ onNavigate }) {
 
                 const prefsRes = await fetch(API_URL + '/api/user/preferences', { headers });
                 if (prefsRes.ok) setPrefs(normalizePreferences(await prefsRes.json()));
+                else if (prefsRes.status === 401) onNavigate('login');
 
                 const clanRes = await fetch(API_URL + '/api/clan/stats');
                 const clanData = await clanRes.json();
@@ -381,15 +399,18 @@ export default function Dashboard({ onNavigate }) {
         if (!selectedMember) return;
 
         setIsSavingAttendance(true);
-        const token = localStorage.getItem('token');
+        const headers = getAuthHeaders({ 'Content-Type': 'application/json' });
+
+        if (!headers) {
+            setIsSavingAttendance(false);
+            onNavigate('login');
+            return;
+        }
 
         try {
             const res = await fetch(API_URL + '/api/clan/attendance', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
+                headers,
                 body: JSON.stringify({
                     clanTag: clanStats.tag,
                     clanName: clanStats.name,
@@ -420,17 +441,22 @@ export default function Dashboard({ onNavigate }) {
 
     const handleSaveProfile = async () => {
         setIsSaving(true);
-        const token = localStorage.getItem('token');
+        const headers = getAuthHeaders({ 'Content-Type': 'application/json' });
+
+        if (!headers) {
+            setIsSaving(false);
+            onNavigate('login');
+            return;
+        }
+
         try {
             const res = await fetch(API_URL + '/api/user/profile', {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
+                headers,
                 body: JSON.stringify(profile)
             });
             if (res.ok) alert("Perfil salvo com sucesso!");
+            else if (res.status === 401) onNavigate('login');
         } catch (err) {
             console.error("Erro ao salvar perfil:", err);
             alert("Erro ao conectar com o servidor.");
@@ -441,16 +467,20 @@ export default function Dashboard({ onNavigate }) {
 
     const handleUpdatePrefs = async (newPrefs) => {
         setPrefs(newPrefs);
-        const token = localStorage.getItem('token');
+        const headers = getAuthHeaders({ 'Content-Type': 'application/json' });
+
+        if (!headers) {
+            onNavigate('login');
+            return;
+        }
+
         try {
-            await fetch(API_URL + '/api/user/preferences', {
+            const res = await fetch(API_URL + '/api/user/preferences', {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
+                headers,
                 body: JSON.stringify(newPrefs)
             });
+            if (res.status === 401) onNavigate('login');
         } catch (err) {
             console.error("Erro ao salvar preferências:", err);
         }
