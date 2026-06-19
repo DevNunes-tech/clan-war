@@ -30,6 +30,66 @@ import {
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
+const defaultPreferences = {
+    notifications: true,
+    dmAlerts: true,
+    language: 'Português',
+    darkMode: false
+};
+
+const normalizeProfile = (data = {}) => ({
+    id: data.id || data._id || '',
+    name: data.name || 'Carregando...',
+    tag: data.tag || data.clanTag || '#---',
+    email: data.email || '',
+    role: data.role || '...',
+    preferences: { ...defaultPreferences, ...(data.preferences || {}) }
+});
+
+const normalizePreferences = (data = {}) => {
+    const prefs = data.preferences && typeof data.preferences === 'object' ? data.preferences : data;
+    return { ...defaultPreferences, ...prefs };
+};
+
+const normalizeClanStats = (data = {}) => ({
+    name: data.name || 'Clã não encontrado',
+    tag: data.tag || '#---',
+    warDay: data.warDay ?? '?',
+    medals: Number(data.medals || 0),
+    pendingAttacks: Number(data.pendingAttacks || 0),
+    membersParticipating: Number(data.membersParticipating || 0),
+    totalMembers: Number(data.totalMembers || 0),
+    isWarDay: Boolean(data.isWarDay),
+    members: Array.isArray(data.members) ? data.members : []
+});
+
+const normalizeClanMember = (member = {}, isWarDay = false) => {
+    const status = isWarDay ? member.status : 'Treino';
+    let scoreClass = 'bg-slate-100 text-slate-500';
+
+    if (isWarDay) {
+        scoreClass = member.status === 'Concluído'
+            ? 'bg-green-100 text-green-700'
+            : (member.status === 'Em Batalha' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700');
+    }
+
+    return {
+        id: member.id || member.tag || member._id || '',
+        name: member.name || 'Sem nome',
+        role: member.role || 'member',
+        trophies: Number(member.trophies || 0),
+        decksUsed: `${Number(member.decksUsed || 0)}/4`,
+        medals: Number(member.medals || 0),
+        status,
+        score: scoreClass
+    };
+};
+
+const normalizeWarHistory = (data = {}) => ({
+    weekHeaders: Array.isArray(data.weekHeaders) ? data.weekHeaders : [],
+    members: Array.isArray(data.members) ? data.members : []
+});
+
 export default function Dashboard({ onNavigate }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [activeTab, setActiveTab] = useState(localStorage.getItem('activeTab') || 'guerra');
@@ -44,10 +104,12 @@ export default function Dashboard({ onNavigate }) {
     const [showProfileMenu, setShowProfileMenu] = useState(false);
 
     const [profile, setProfile] = useState({
+        id: '',
         name: 'Carregando...',
         tag: '#---',
         email: '',
-        role: '...'
+        role: '...',
+        preferences: defaultPreferences
     });
 
     const [prefs, setPrefs] = useState({
@@ -61,10 +123,11 @@ export default function Dashboard({ onNavigate }) {
         name: 'Carregando...',
         tag: '#---',
         warDay: '...',
-        medals: '...',
-        pendingAttacks: '...',
-        membersParticipating: '...',
-        totalMembers: '...'
+        medals: 0,
+        pendingAttacks: 0,
+        membersParticipating: 0,
+        totalMembers: 0,
+        isWarDay: false
     });
 
     const [clanMembers, setClanMembers] = useState([]);
@@ -103,8 +166,7 @@ export default function Dashboard({ onNavigate }) {
             const userData = JSON.parse(storedUser);
             setProfile(prev => ({
                 ...prev,
-                name: userData.name,
-                tag: userData.tag,
+                ...normalizeProfile(userData),
                 role: translateRole(userData.role)
             }));
         }
@@ -115,64 +177,43 @@ export default function Dashboard({ onNavigate }) {
 
             try {
                 const profileRes = await fetch(API_URL + '/api/user/profile', { headers });
-                if (profileRes.ok) setProfile(await profileRes.json());
+                if (profileRes.ok) {
+                    const profileData = await profileRes.json();
+                    setProfile(prev => ({
+                        ...prev,
+                        ...normalizeProfile(profileData),
+                        role: translateRole(profileData.role)
+                    }));
+                }
                 else if (profileRes.status === 401) onNavigate('login');
 
                 const prefsRes = await fetch(API_URL + '/api/user/preferences', { headers });
-                if (prefsRes.ok) setPrefs(await prefsRes.json());
+                if (prefsRes.ok) setPrefs(normalizePreferences(await prefsRes.json()));
 
                 const clanRes = await fetch(API_URL + '/api/clan/stats');
                 const clanData = await clanRes.json();
 
                 if (clanRes.ok) {
-                    const isWarDay = clanData.isWarDay;
-                    setClanStats({
-                        name: clanData.name,
-                        tag: clanData.tag,
-                        warDay: clanData.warDay || '?',
-                        medals: clanData.medals.toLocaleString(),
-                        pendingAttacks: isWarDay ? `${clanData.pendingAttacks}` : 'OFF',
-                        membersParticipating: `${clanData.membersParticipating}/${clanData.totalMembers || 50}`,
-                        totalMembers: clanData.totalMembers,
-                        isWarDay: isWarDay
-                    });
-
-                    if (clanData.members) {
-                        setClanMembers(clanData.members.map((m) => {
-                            const status = isWarDay ? m.status : 'Treino';
-                            let scoreClass = 'bg-slate-100 text-slate-500'; // Default Neutral
-
-                            if (isWarDay) {
-                                scoreClass = m.status === 'Concluído' ? 'bg-green-100 text-green-700' :
-                                    (m.status === 'Em Batalha' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700');
-                            }
-
-                            return {
-                                id: m.tag,
-                                name: m.name,
-                                role: translateRole(m.role),
-                                trophies: m.trophies || 0,
-                                decksUsed: `${m.decksUsed}/4`,
-                                medals: m.medals,
-                                status: status,
-                                score: scoreClass
-                            };
-                        }));
-                    }
+                    const normalizedClan = normalizeClanStats(clanData);
+                    setClanStats(normalizedClan);
+                    setClanMembers(normalizedClan.members.map((m) => normalizeClanMember(m, normalizedClan.isWarDay)));
                 } else {
                     setClanStats({
                         name: 'Clã não encontrado',
                         tag: 'Verifique o .env',
-                        medals: '0',
-                        pendingAttacks: '0',
-                        membersParticipating: '0/0',
-                        totalMembers: 0
+                        warDay: '?',
+                        medals: 0,
+                        pendingAttacks: 0,
+                        membersParticipating: 0,
+                        totalMembers: 0,
+                        isWarDay: false,
+                        members: []
                     });
                 }
 
                 const historyRes = await fetch(API_URL + '/api/clan/history');
                 if (historyRes.ok) {
-                    setWarHistory(await historyRes.json());
+                    setWarHistory(normalizeWarHistory(await historyRes.json()));
                 }
 
                 // Lógica de Notificações Baseada no Dia
@@ -271,9 +312,9 @@ export default function Dashboard({ onNavigate }) {
     };
 
     const stats = [
-        { label: 'Medalhas do Clã', value: clanStats.medals, icon: Trophy, color: 'text-amber-500', bg: 'bg-amber-100', border: 'border-amber-200' },
-        { label: 'Ataques Pendentes', value: clanStats.pendingAttacks, icon: Swords, color: 'text-red-500', bg: 'bg-red-100', border: 'border-red-200' },
-        { label: 'Membros Participando', value: clanStats.membersParticipating, icon: Users, color: 'text-blue-500', bg: 'bg-blue-100', border: 'border-blue-200' },
+        { label: 'Medalhas do Clã', value: clanStats.medals.toLocaleString(), icon: Trophy, color: 'text-amber-500', bg: 'bg-amber-100', border: 'border-amber-200' },
+        { label: 'Ataques Pendentes', value: clanStats.isWarDay ? `${clanStats.pendingAttacks}` : 'OFF', icon: Swords, color: 'text-red-500', bg: 'bg-red-100', border: 'border-red-200' },
+        { label: 'Membros Participando', value: `${clanStats.membersParticipating}/${clanStats.totalMembers || 50}`, icon: Users, color: 'text-blue-500', bg: 'bg-blue-100', border: 'border-blue-200' },
     ];
 
     const notifications = [
@@ -805,6 +846,7 @@ export default function Dashboard({ onNavigate }) {
                                             <tbody className="divide-y divide-slate-100">
                                                 {warHistory.members.length > 0 ? (
                                                     warHistory.members
+                                                        .filter(member => clanMembers.some(currentMember => currentMember.id === member.tag))
                                                         .filter(m =>
                                                             m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                                             m.tag.toLowerCase().includes(searchTerm.toLowerCase())

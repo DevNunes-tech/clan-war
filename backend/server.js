@@ -7,7 +7,14 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors({
-    origin: ['http://localhost:3000', 'https://brootherwood.com.br', 'http://brootherwood.com.br', 'https://www.brootherwood.com.br']
+    origin: [
+        'http://localhost:3000',
+        'http://localhost:4173',
+        'http://localhost:5173',
+        'https://brootherwood.com.br',
+        'http://brootherwood.com.br',
+        'https://www.brootherwood.com.br'
+    ]
 }));
 app.use(express.json());
 

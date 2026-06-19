@@ -1,9 +1,13 @@
 const Clan = require('../models/Clan');
 const crApi = require('../utils/crApi');
 
+const normalizeTag = (tag) => String(tag || '')
+    .trim()
+    .replace(/["']/g, '')
+    .toUpperCase();
+
 exports.getClanStats = async (req, res) => {
-    let clanTag = req.query.tag || process.env.CLAN_TAG || '#L98JQV';
-    clanTag = clanTag.replace(/["']/g, '');
+    let clanTag = normalizeTag(req.query.tag || process.env.CLAN_TAG || '#L98JQV');
     console.log('Buscando dados para a Tag:', clanTag);
 
 
@@ -14,12 +18,14 @@ exports.getClanStats = async (req, res) => {
         const participantsMap = {};
         if (riverRace.clan && riverRace.clan.participants) {
             riverRace.clan.participants.forEach(p => {
-                participantsMap[p.tag] = p;
+                participantsMap[normalizeTag(p.tag)] = p;
             });
         }
 
+        const currentMembersTags = new Set((apiClan.memberList || []).map(m => normalizeTag(m.tag)));
+
         const members = (apiClan.memberList || []).map(m => {
-            const warInfo = participantsMap[m.tag] || { decksUsed: 0, fame: 0 };
+            const warInfo = participantsMap[normalizeTag(m.tag)] || { decksUsed: 0, fame: 0 };
             return {
                 name: m.name,
                 tag: m.tag,
@@ -31,8 +37,7 @@ exports.getClanStats = async (req, res) => {
             };
         });
 
-        const currentMembersTags = new Set((apiClan.memberList || []).map(m => m.tag));
-        const activeParticipants = (riverRace.clan?.participants || []).filter(p => currentMembersTags.has(p.tag));
+        const activeParticipants = (riverRace.clan?.participants || []).filter(p => currentMembersTags.has(normalizeTag(p.tag)));
 
         const today = new Date();
         const dayIdx = today.getDay(); // 0-Dom, 4-Qui, 5-Sex, 6-Sab
@@ -71,8 +76,7 @@ exports.getClanStats = async (req, res) => {
 };
 
 exports.getWarHistory = async (req, res) => {
-    let clanTag = req.query.tag || process.env.CLAN_TAG || '#L98JQV';
-    clanTag = clanTag.replace(/["']/g, '');
+    let clanTag = normalizeTag(req.query.tag || process.env.CLAN_TAG || '#L98JQV');
 
 
     try {
@@ -87,11 +91,12 @@ exports.getWarHistory = async (req, res) => {
         });
 
         pastWars.forEach((war, weekIdx) => {
-            const clanData = war.standings?.find(s => s.clan.tag === clanTag);
+            const clanData = war.standings?.find(s => normalizeTag(s.clan?.tag) === clanTag);
             if (clanData && clanData.clan.participants) {
                 clanData.clan.participants.forEach(p => {
-                    if (!aggregated[p.tag]) {
-                        aggregated[p.tag] = {
+                    const memberTag = normalizeTag(p.tag);
+                    if (!aggregated[memberTag]) {
+                        aggregated[memberTag] = {
                             name: p.name,
                             tag: p.tag,
                             role: '...',
@@ -100,18 +105,18 @@ exports.getWarHistory = async (req, res) => {
                             history: new Array(weeksCount).fill(0)
                         };
                     }
-                    aggregated[p.tag].weeks += 1;
-                    aggregated[p.tag].total += p.fame;
-                    aggregated[p.tag].history[weekIdx] = p.fame;
+                    aggregated[memberTag].weeks += 1;
+                    aggregated[memberTag].total += p.fame;
+                    aggregated[memberTag].history[weekIdx] = p.fame;
                 });
             }
         });
 
         const apiClan = await crApi.getClan(clanTag);
-        const currentMembersTags = new Set((apiClan.memberList || []).map(m => m.tag));
+        const currentMembersTags = new Set((apiClan.memberList || []).map(m => normalizeTag(m.tag)));
 
         let historyArray = Object.values(aggregated)
-            .filter(item => currentMembersTags.has(item.tag))
+            .filter(item => currentMembersTags.has(normalizeTag(item.tag)))
             .map(item => ({
                 rank: 0,
                 name: item.name,
