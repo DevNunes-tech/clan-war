@@ -35,6 +35,8 @@ import {
     MessageSquare
 } from 'lucide-react';
 
+import { buildUrl } from '../utils/api';
+
 const API_URL = import.meta.env.VITE_API_URL || 'https://clan-war-yyeq.vercel.app';
 
 const getAuthHeaders = (extraHeaders = {}) => {
@@ -316,7 +318,7 @@ export default function Dashboard({ onNavigate }) {
                 if (prefsRes.ok) setPrefs(normalizePreferences(await prefsRes.json()));
                 else if (prefsRes.status === 401) onNavigate('login');
 
-                const clanRes = await fetch(API_URL + '/api/clan/stats');
+                const clanRes = await fetch(buildUrl('/api/clan/stats'));
                 const clanData = await clanRes.json();
 
                 if (clanRes.ok) {
@@ -341,7 +343,7 @@ export default function Dashboard({ onNavigate }) {
                     setWarAttendance([]);
                 }
 
-                const historyRes = await fetch(API_URL + '/api/clan/history');
+                const historyRes = await fetch(buildUrl('/api/clan/history'));
                 if (historyRes.ok) {
                     setWarHistory(normalizeWarHistory(await historyRes.json()));
                 }
@@ -408,7 +410,7 @@ export default function Dashboard({ onNavigate }) {
         }
 
         try {
-            const res = await fetch(API_URL + '/api/clan/attendance', {
+            const res = await fetch(buildUrl('/api/clan/attendance'), {
                 method: 'POST',
                 headers,
                 body: JSON.stringify({
