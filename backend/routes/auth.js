@@ -3,8 +3,18 @@ const router = express.Router();
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const crApi = require('../utils/crApi');
+const { validateEnvMiddleware } = require('../middleware/validateEnv');
 
-router.post('/login', async (req, res) => {
+const normalizeTag = (tag) => {
+    let normalized = String(tag || '').trim();
+    if ((normalized.startsWith('"') && normalized.endsWith('"')) || (normalized.startsWith("'") && normalized.endsWith("'"))) {
+        normalized = normalized.slice(1, -1).trim();
+    }
+    if (!normalized.startsWith('#')) normalized = `#${normalized}`;
+    return normalized.toUpperCase();
+};
+
+router.post('/login', validateEnvMiddleware, async (req, res) => {
     const { playerTag } = req.body;
 
     if (!playerTag) {
@@ -14,8 +24,8 @@ router.post('/login', async (req, res) => {
     try {
         const player = await crApi.getPlayer(playerTag);
 
-        const role = player.role;
-        const allowedRoles = ['leader', 'coLeader'];
+        const role = String(player.role || '').toLowerCase();
+        const allowedRoles = ['leader', 'coleader'];
 
         if (!allowedRoles.includes(role)) {
             return res.status(403).json({
@@ -24,7 +34,15 @@ router.post('/login', async (req, res) => {
             });
         }
 
-        if (player.clan?.tag !== process.env.CLAN_TAG) {
+        const envClanTag = normalizeTag(process.env.CLAN_TAG);
+        if (!envClanTag || envClanTag === '#') {
+            return res.status(500).json({
+                success: false,
+                message: 'Tag do clã não está configurada no servidor. Informe o administrador.'
+            });
+        }
+
+        if (normalizeTag(player.clan?.tag) !== envClanTag) {
             return res.status(403).json({
                 success: false,
                 message: 'Acesso negado. Você não pertence ao clã monitorado.'
