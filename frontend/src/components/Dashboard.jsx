@@ -37,7 +37,8 @@ import {
 
 import { buildUrl } from '../utils/api';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://clan-war-yyeq.vercel.app';
+const API_URL = import.meta.env.VITE_API_URL
+    || (import.meta.env.DEV ? 'http://localhost:5000' : 'https://clan-war-yyeq.vercel.app');
 
 const getAuthHeaders = (extraHeaders = {}) => {
     const token = localStorage.getItem('token');
@@ -414,13 +415,10 @@ export default function Dashboard({ onNavigate }) {
                 method: 'POST',
                 headers,
                 body: JSON.stringify({
-                    clanTag: clanStats.tag,
-                    clanName: clanStats.name,
                     memberTag: selectedMember.id,
                     memberName: selectedMember.name,
                     decksUsed: selectedMember.decksUsedCount,
-                    justification: attendanceJustification,
-                    reportedBy: profile.name
+                    justification: attendanceJustification
                 })
             });
 
@@ -455,7 +453,10 @@ export default function Dashboard({ onNavigate }) {
             const res = await fetch(API_URL + '/api/user/profile', {
                 method: 'PUT',
                 headers,
-                body: JSON.stringify(profile)
+                body: JSON.stringify({
+                    name: profile.name,
+                    email: profile.email
+                })
             });
             if (res.ok) alert("Perfil salvo com sucesso!");
             else if (res.status === 401) onNavigate('login');

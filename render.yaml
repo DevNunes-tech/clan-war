@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: wartracker-api
+    env: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: CLASH_ROYALE_API_KEY
+        sync: false
+      - key: CLASH_ROYALE_BASE_URL
+        value: https://api.clashroyale.com/v1
+      - key: CLAN_TAG
+        sync: false

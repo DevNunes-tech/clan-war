@@ -5,6 +5,7 @@ const baseURL = (process.env.CLASH_ROYALE_BASE_URL || 'https://api.clashroyale.c
 
 const crApi = axios.create({
     baseURL,
+    timeout: 10000,
     headers: {
         'Authorization': `Bearer ${process.env.CLASH_ROYALE_API_KEY}`
     }
