@@ -188,6 +188,17 @@ Para apontar explicitamente para uma API:
 VITE_API_URL=https://seu-backend.exemplo npm run build
 ```
 
+Na Vercel, o valor deve ser somente a URL, sem Markdown, colchetes,
+parênteses ou caminho de endpoint:
+
+```text
+https://clan-war.onrender.com
+```
+
+Não use valores como
+`[https://clan-war.onrender.com](https://clan-war.onrender.com)` nem
+`https://clan-war.onrender.com/api`.
+
 Na Vercel, configure a variavel de ambiente do frontend:
 
 ```env
