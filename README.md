@@ -179,13 +179,29 @@ Em desenvolvimento, o frontend usa `http://localhost:5000` quando
 `VITE_API_URL` nao foi definido. Em producao, o fallback atual e:
 
 ```text
-https://clan-war-yyeq.vercel.app
+https://clan-war.onrender.com
 ```
 
 Para apontar explicitamente para uma API:
 
 ```bash
 VITE_API_URL=https://seu-backend.exemplo npm run build
+```
+
+Na Vercel, configure a variavel de ambiente do frontend:
+
+```env
+VITE_API_URL=https://clan-war.onrender.com
+```
+
+No Render, configure as variaveis do backend:
+
+```text
+MONGODB_URI
+JWT_SECRET
+CLASH_ROYALE_API_KEY
+CLASH_ROYALE_BASE_URL=https://api.clashroyale.com/v1
+CLAN_TAG
 ```
 
 ### Render
@@ -392,7 +408,7 @@ adicionada na lista `allowedOrigins` de `backend/server.js`.
 ### API local e frontend publicado misturados
 
 O frontend local e configurado para usar `localhost:5000` em modo dev. Se
-`VITE_API_URL` for definido apontando para a Vercel, o login local continuara
+`VITE_API_URL` for definido apontando para o Render, o login local continuara
 dependente da infraestrutura publicada.
 
 ## 12. Estado da validacao atual
