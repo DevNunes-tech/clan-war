@@ -1,11 +1,13 @@
 const Clan = require('../models/Clan');
 const User = require('../models/User');
 const crApi = require('../utils/crApi');
-
-const normalizeTag = (tag) => String(tag || '')
-    .trim()
-    .replace(/["']/g, '')
-    .toUpperCase();
+const {
+    normalizeTag,
+    getWarState,
+    formatMembers,
+    getHistoryWarMeta
+} = require('../services/warFormatter');
+const { createWarSnapshot } = require('../services/warAnalyzer');
 
 const normalizeConfiguredTag = (tag) => {
     const normalized = normalizeTag(tag);
@@ -23,11 +25,11 @@ const getDateLabel = (date = new Date()) => date.toLocaleDateString('pt-BR', {
 
 const getConfiguredClanTag = () => normalizeConfiguredTag(process.env.CLAN_TAG);
 
-const ensureClanRecord = async ({ clanTag, clanName, medals, members }) => {
+const ensureClanRecord = async ({ clanTag, clanName, fame, members }) => {
     const update = {
         $set: {
             name: clanName,
-            medals: Number(medals || 0),
+            fame: Number(fame || 0),
             members: Array.isArray(members) ? members : []
         },
         $setOnInsert: {
@@ -54,66 +56,70 @@ exports.getClanStats = async (req, res) => {
     try {
         const clanRecord = await Clan.findOne({ tag: clanTag });
         const apiClan = await crApi.getClan(clanTag);
-        const riverRace = await crApi.getRiverRace(clanTag);
 
-        const participantsMap = {};
-        if (riverRace.clan && riverRace.clan.participants) {
-            riverRace.clan.participants.forEach(p => {
-                participantsMap[normalizeTag(p.tag)] = p;
-            });
+        let riverRace = null;
+        try {
+            riverRace = await crApi.getRiverRace(clanTag);
+        } catch (error) {
+            if (error.response?.status !== 404) throw error;
+            riverRace = {
+                periodType: 'none',
+                periodIndex: 0,
+                sectionIndex: 0,
+                clan: { participants: [], fame: 0 },
+                periodLogs: []
+            };
         }
 
-        const currentMembersTags = new Set((apiClan.memberList || []).map(m => normalizeTag(m.tag)));
-
-        const members = (apiClan.memberList || []).map(m => {
-            const warInfo = participantsMap[normalizeTag(m.tag)] || { decksUsed: 0, fame: 0 };
-            return {
-                name: m.name,
-                tag: m.tag,
-                role: m.role,
-                trophies: m.trophies || 0,
-                decksUsed: warInfo.decksUsed || 0,
-                medals: warInfo.fame || 0,
-                status: warInfo.decksUsed >= 4 ? 'Concluído' : (warInfo.decksUsed > 0 ? 'Em Batalha' : 'Pendente')
-            };
+        const warLog = await crApi.getWarLog(clanTag).catch(() => ({ items: [] }));
+        const lastLogEntry = Array.isArray(warLog.items) ? warLog.items[0] : null;
+        const warState = getWarState(riverRace);
+        const members = formatMembers(apiClan.memberList || [], riverRace.clan?.participants || [], warState);
+        const snapshot = createWarSnapshot({
+            apiClan,
+            riverRace,
+            members,
+            lastLogEntry,
+            previousWar: lastLogEntry,
+            warAttendance: Array.isArray(clanRecord?.warAttendance) ? clanRecord.warAttendance : []
         });
-
-        const activeParticipants = (riverRace.clan?.participants || []).filter(p => currentMembersTags.has(normalizeTag(p.tag)));
-
-        const today = new Date();
-        const dayIdx = today.getDay(); // 0-Dom, 4-Qui, 5-Sex, 6-Sab
-        const isWarDay = dayIdx === 0 || dayIdx >= 4;
-        const activeWarWindow = isWarDay && today.getHours() >= 22;
+        const { isWarDay } = warState;
+        const activeWarWindow = isWarDay && new Date().getHours() >= 22;
         const missedDecksToday = members
-            .filter(member => Number(member.decksUsed || 0) < 4)
-            .map(member => ({
+            .filter((member) => member.inRace && Number(member.decksUsedToday || 0) < 4)
+            .map((member) => ({
                 name: member.name,
                 tag: member.tag,
-                decksUsed: Number(member.decksUsed || 0),
-                decksMissed: Math.max(0, 4 - Number(member.decksUsed || 0))
+                decksUsedToday: Number(member.decksUsedToday || 0),
+                decksMissed: Math.max(0, 4 - Number(member.decksUsedToday || 0))
             }));
 
         await ensureClanRecord({
             clanTag: apiClan.tag,
             clanName: apiClan.name,
-            medals: riverRace.clan?.fame || riverRace.clan?.periodPoints || 0,
+            fame: snapshot.war.fame,
             members: apiClan.memberList || []
         });
 
         res.json({
             name: apiClan.name,
             tag: apiClan.tag,
-            warDay: (riverRace.periodIndex || 0) + 1,
-            medals: riverRace.clan?.fame || riverRace.clan?.periodPoints || 0,
-            pendingAttacks: isWarDay ? members.filter(m => m.decksUsed < 4).length : 0,
-            membersParticipating: activeParticipants.length,
+            war: snapshot.war,
+            clan: snapshot.clan,
+            today: snapshot.today,
+            latestDay: snapshot.latestDay,
+            periodLogs: snapshot.periodLogs,
+            analysis: snapshot.analysis,
+            fame: snapshot.war.fame,
+            pendingAttacks: snapshot.today.playersPending + snapshot.today.playersNotStarted,
+            membersParticipating: snapshot.clan.membersParticipating,
             totalMembers: apiClan.members,
-            members: members,
+            members,
             missedDecksToday,
             warAttendance: Array.isArray(clanRecord?.warAttendance) ? clanRecord.warAttendance.slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) : [],
             endOfDayAlert: activeWarWindow && missedDecksToday.length > 0,
             fromApi: true,
-            isWarDay: isWarDay
+            isWarDay
         });
 
     } catch (error) {
@@ -168,7 +174,7 @@ exports.saveWarAttendance = async (req, res) => {
         const clan = await ensureClanRecord({
             clanTag,
             clanName: existingClan?.name || clanTag,
-            medals: existingClan?.medals || 0,
+            fame: existingClan?.fame || 0,
             members: existingClan?.members || []
         });
         if (!clan) {
@@ -231,9 +237,7 @@ exports.getWarHistory = async (req, res) => {
         const pastWars = warLog.items || [];
         const weeksCount = pastWars.length;
 
-        const weekHeaders = pastWars.map((war) => {
-            return `S${(war.sectionIndex || 0) + 1}`;
-        });
+        const warHeaders = pastWars.map((war, index) => getHistoryWarMeta(war, index).label);
 
         pastWars.forEach((war, weekIdx) => {
             const clanData = war.standings?.find(s => normalizeTag(s.clan?.tag) === clanTag);
@@ -247,12 +251,16 @@ exports.getWarHistory = async (req, res) => {
                             role: '...',
                             weeks: 0,
                             total: 0,
-                            history: new Array(weeksCount).fill(0)
+                            decksUsedTotal: 0,
+                            history: new Array(weeksCount).fill(0),
+                            decksHistory: new Array(weeksCount).fill(0)
                         };
                     }
                     aggregated[memberTag].weeks += 1;
                     aggregated[memberTag].total += p.fame;
+                    aggregated[memberTag].decksUsedTotal += Number(p.decksUsed || 0);
                     aggregated[memberTag].history[weekIdx] = p.fame;
+                    aggregated[memberTag].decksHistory[weekIdx] = Number(p.decksUsed || 0);
                 });
             }
         });
@@ -269,7 +277,13 @@ exports.getWarHistory = async (req, res) => {
                 weeks: item.weeks,
                 total: item.total,
                 average: Math.round(item.total / (item.weeks || 1)),
-                history: item.history
+                history: item.history,
+                decksHistory: item.decksHistory,
+                attacksPossible: item.weeks * 16,
+                attacksUsed: item.decksUsedTotal,
+                participation: item.weeks
+                    ? Math.round((item.decksUsedTotal / (item.weeks * 16)) * 100)
+                    : 0
             }));
 
         historyArray.sort((a, b) => b.total - a.total);
@@ -280,7 +294,8 @@ exports.getWarHistory = async (req, res) => {
         }));
 
         res.json({
-            weekHeaders,
+            warHeaders,
+            weekHeaders: warHeaders,
             members: historyArray
         });
 

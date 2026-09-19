@@ -15,7 +15,7 @@ async function seed() {
         await Clan.create({
             name: 'Os Bárbaros',
             tag: '#L98JQV',
-            medals: 18450,
+            fame: 18450,
             members: [
                 { name: 'KingSlayer', tag: '#123', role: 'Leader', decksUsed: 4, lastActive: new Date() },
                 { name: 'ArcherQueen', tag: '#456', role: 'Co-Leader', decksUsed: 4, lastActive: new Date() }

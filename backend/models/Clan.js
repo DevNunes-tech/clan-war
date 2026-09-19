@@ -57,7 +57,7 @@ const clanSchema = new mongoose.Schema({
         unique: true,
         trim: true
     },
-    medals: {
+    fame: {
         type: Number,
         default: 0
     },
