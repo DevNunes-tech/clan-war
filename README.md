@@ -1,157 +1,98 @@
 # WarTracker
 
-Painel web para lideres e co-lideres de clas do Clash Royale. O sistema
-combina uma interface React, uma API Node.js/Express, MongoDB e a API oficial
-do Clash Royale.
+Painel de acompanhamento de guerras de clãs para líderes e co-líderes do
+Clash Royale.
 
-> Este documento foi escrito para facilitar a analise do projeto por outra
-> pessoa ou por uma ferramenta de IA. Ele descreve o comportamento atual do
-> codigo, incluindo problemas de configuracao e pontos que podem causar
-> falhas.
+O WarTracker combina uma interface React, uma API Node.js/Express, MongoDB e
+a API oficial do Clash Royale para centralizar o acompanhamento da guerra
+atual, o histórico de guerras, as medalhas e os ataques pendentes dos membros.
 
-## 1. Objetivo do sistema
+## Visão geral
 
-O WarTracker tenta centralizar:
+- Autenticação por tag de jogador, sem senha de usuário.
+- Acesso restrito a líderes e co-líderes do clã configurado.
+- Dashboard com estatísticas da guerra atual e histórico.
+- Registro de justificativas para ataques não realizados.
+- Preferências e dados básicos do usuário.
+- API protegida por tokens JWT com validade de 12 horas.
 
-- login usando a tag de um jogador;
-- verificacao do jogador na API oficial do Clash Royale;
-- validacao de que o jogador e lider ou co-lider;
-- validacao de que o jogador pertence ao cla configurado;
-- exibicao da guerra atual, membros, medalhas e ataques pendentes;
-- historico de guerras;
-- preferencias do usuario;
-- registro manual de justificativas de ataques nao realizados.
+## Stack
 
-O projeto nao usa senha informada pelo usuario no login. A tag e enviada para
-a API do Clash Royale e o resultado determina se o acesso e permitido.
+| Camada | Tecnologias |
+| --- | --- |
+| Frontend | React 19, Vite, Tailwind CSS, Lucide React |
+| Backend | Node.js, Express 5, CommonJS |
+| Dados | MongoDB, Mongoose |
+| Integrações | API do Clash Royale via Axios |
+| Autenticação | JSON Web Token (JWT) |
+| Deploy | Render para a API e Vercel ou outro host para o frontend |
 
-## 2. Estrutura do repositorio
+## Estrutura do projeto
 
 ```text
 backend/
-  api/server.js             Adaptador serverless para a Vercel
-  config/database.js        Conexao com MongoDB/Mongoose
-  controllers/clanController.js
-                            Regras de estatisticas, historico e presenca
-  middleware/auth.js        Validacao do JWT
-  middleware/validateEnv.js Validacao das variaveis de ambiente
-  models/Clan.js             Modelo do cla e presenca de guerra
-  models/User.js             Modelo do usuario
-  routes/auth.js             POST /api/auth/login
-  routes/clan.js             Endpoints de cla
-  routes/user.js             Endpoints de perfil e preferencias
-  utils/crApi.js             Cliente HTTP da API do Clash Royale
-  server.js                 Aplicacao Express local e serverless
-  seed.js                   Limpeza e carga de dados de exemplo
-  .env.example              Modelo de configuracao sem credenciais
+  api/server.js             Adaptador para execução serverless
+  config/database.js        Conexão com MongoDB
+  controllers/              Regras de negócio do clã
+  middleware/               Autenticação e validação do ambiente
+  models/                   Modelos Mongoose de usuário e clã
+  routes/                   Rotas de autenticação, clã e usuário
+  services/                 Serviços de análise e formatação de guerra
+  utils/crApi.js            Cliente da API do Clash Royale
+  server.js                 Aplicação Express local
+  seed.js                   Carga de dados de exemplo
 
 frontend/
-  src/App.jsx                Controle das telas e sessao local
-  src/components/
-    LandingPage.jsx          Pagina inicial
-    LoginPage.jsx            Formulario de login
-    Dashboard.jsx            Painel principal
-  src/utils/api.js           Montagem de URLs da API
-  vite.config.js             Configuracao do Vite
+  src/App.jsx               Controle da sessão e das telas
+  src/components/           Componentes da interface
+  src/pages/                Páginas da aplicação
+  src/utils/api.js          Cliente HTTP do frontend
+  vite.config.js            Configuração do Vite
 ```
 
-## 3. Tecnologias
+## Pré-requisitos
 
-### Backend
+- Node.js 22 ou versão compatível com as dependências do projeto.
+- npm.
+- Uma instância MongoDB local ou MongoDB Atlas.
+- Uma chave da API do Clash Royale com o IP de origem autorizado.
 
-- Node.js e CommonJS;
-- Express;
-- Mongoose/MongoDB;
-- Axios;
-- JSON Web Token (JWT);
-- CORS;
-- dotenv;
-- serverless-http para deploy serverless.
+## Configuração do ambiente
 
-### Frontend
+1. Copie o arquivo de exemplo:
 
-- React 19;
-- Vite;
-- Tailwind CSS;
-- Lucide React.
+   ```bash
+   cp backend/.env.example backend/.env
+   ```
 
-## 4. Fluxo completo da aplicacao
+2. Preencha `backend/.env`:
 
-### 4.1 Inicializacao do backend
+   ```env
+   PORT=5000
+   MONGODB_URI=mongodb+srv://usuario:senha@cluster.mongodb.net/wartracker
+   JWT_SECRET=um-segredo-longo-e-aleatorio
+   CLASH_ROYALE_API_KEY=sua-chave-da-api
+   CLASH_ROYALE_BASE_URL=https://proxy.royaleapi.dev/v1
+   CLAN_TAG=#GG9JYGCOP
+   ```
 
-1. `backend/server.js` carrega o `.env`.
-2. `ensureEnv()` verifica `MONGODB_URI`, `JWT_SECRET`,
-   `CLASH_ROYALE_API_KEY` e `CLAN_TAG`.
-3. O backend conecta no MongoDB antes de abrir a porta HTTP.
-4. O Express configura CORS, JSON e as rotas.
-5. Em execucao local, o servidor escuta a porta definida em `PORT`, por
-   padrao `5000`.
+### Variáveis de ambiente
 
-Se a conexao com o MongoDB falhar, o servidor encerra. Portanto, a pagina
-frontend pode abrir, mas nenhuma funcionalidade que dependa do backend vai
-funcionar.
+| Variável | Obrigatória | Descrição |
+| --- | --- | --- |
+| `PORT` | Não | Porta local da API. O padrão é `5000`. |
+| `MONGODB_URI` | Sim | URI de conexão do MongoDB. |
+| `JWT_SECRET` | Sim | Segredo usado para assinar os tokens. |
+| `CLASH_ROYALE_API_KEY` | Sim | Chave de acesso à API do Clash Royale. |
+| `CLASH_ROYALE_BASE_URL` | Não | URL base da API. Usa o proxy oficial por padrão. |
+| `CLAN_TAG` | Sim | Tag do clã monitorado, com ou sem `#`. |
 
-### 4.2 Fluxo de login
+O arquivo `.env` contém credenciais e não deve ser versionado. Nunca publique
+`MONGODB_URI`, `JWT_SECRET`, chaves de API ou tokens JWT.
 
-1. O usuario informa uma tag, por exemplo `#GG9JYGCOP`.
-2. O frontend envia `POST /api/auth/login`.
-3. O backend chama `GET /players/{tag}` na API do Clash Royale.
-4. O backend verifica se o cargo retornado e `leader` ou `coleader`.
-5. O backend compara o cla retornado com `CLAN_TAG`.
-6. Se o usuario ainda nao existir, cria um registro em `User`.
-7. O backend gera um JWT com validade de 12 horas.
-8. O frontend salva `token` e `user` no `localStorage`.
-9. A tela muda para o dashboard.
+## Execução local
 
-O token e enviado depois no header:
-
-```http
-Authorization: Bearer <token>
-```
-
-### 4.3 Carregamento do dashboard
-
-Depois do login, o frontend faz chamadas para:
-
-1. `/api/user/profile`;
-2. `/api/user/preferences`;
-3. `/api/clan/stats`;
-4. `/api/clan/history`.
-
-O endpoint de estatisticas chama a API oficial para buscar o cla e a guerra
-atual, cruza os participantes da guerra com os membros atuais e salva uma
-copia resumida no MongoDB.
-
-## 5. Configuracao do ambiente
-
-Crie `backend/.env` usando [backend/.env.example](./backend/.env.example):
-
-```env
-PORT=5000
-MONGODB_URI=mongodb+srv://usuario:senha@cluster.mongodb.net/wartracker
-JWT_SECRET=um-segredo-longo-e-aleatorio
-CLASH_ROYALE_API_KEY=sua-chave-da-api-do-clash-royale
-CLASH_ROYALE_BASE_URL=https://proxy.royaleapi.dev/v1
-CLAN_TAG=#GG9JYGCOP
-```
-
-Variaveis obrigatorias:
-
-| Variavel | Funcao |
-|---|---|
-| `PORT` | Porta do backend local. O padrao e `5000`. |
-| `MONGODB_URI` | URI completa do MongoDB Atlas ou MongoDB local. |
-| `JWT_SECRET` | Segredo usado para assinar e validar tokens. |
-| `CLASH_ROYALE_API_KEY` | Chave usada nas chamadas da API oficial. |
-| `CLASH_ROYALE_BASE_URL` | Proxy configurado: `https://proxy.royaleapi.dev/v1`. |
-| `CLAN_TAG` | Cla monitorado, com ou sem `#`. |
-
-Nunca envie o `.env` para o Git, para um chat ou para uma ferramenta de IA.
-Use placeholders ao pedir ajuda.
-
-## 6. Como instalar e executar
-
-### Backend
+Instale e inicie a API:
 
 ```bash
 cd backend
@@ -159,15 +100,9 @@ npm install
 npm run dev
 ```
 
-Para executar sem Nodemon:
+A API ficará disponível em `http://localhost:5000`.
 
-```bash
-npm start
-```
-
-### Frontend
-
-Em outro terminal:
+Em outro terminal, instale e inicie o frontend:
 
 ```bash
 cd frontend
@@ -175,77 +110,43 @@ npm install
 npm run dev
 ```
 
-Em desenvolvimento, o frontend usa `http://localhost:5000` quando
-`VITE_API_URL` nao foi definido. Em producao, o fallback atual e:
-
-```text
-https://clan-war.onrender.com
-```
-
-Para apontar explicitamente para uma API:
+O Vite exibirá a URL local, normalmente `http://localhost:5173`. Para usar
+uma API diferente, defina `VITE_API_URL` antes de iniciar ou gerar o build:
 
 ```bash
-VITE_API_URL=https://seu-backend.exemplo npm run build
+VITE_API_URL=https://sua-api.exemplo npm run build
 ```
 
-Na Vercel, o valor deve ser somente a URL, sem Markdown, colchetes,
-parênteses ou caminho de endpoint:
+O valor deve ser apenas a URL base da API, sem `/api` ao final.
 
-```text
-https://clan-war.onrender.com
+### Scripts disponíveis
+
+No diretório `backend`:
+
+```bash
+npm start       # inicia a API com Node.js
+npm run dev     # inicia a API com Nodemon
+npm test        # executa os testes dos serviços
 ```
 
-Não use valores como
-`[https://clan-war.onrender.com](https://clan-war.onrender.com)` nem
-`https://clan-war.onrender.com/api`.
+No diretório `frontend`:
 
-Na Vercel, configure a variavel de ambiente do frontend:
-
-```env
-VITE_API_URL=https://clan-war.onrender.com
+```bash
+npm run dev     # servidor de desenvolvimento
+npm run build   # build de produção
+npm run preview # serve o build localmente
+npm run lint    # verifica o código com ESLint
 ```
 
-No Render, configure as variaveis do backend:
+## API
 
-```text
-MONGODB_URI
-JWT_SECRET
-CLASH_ROYALE_API_KEY
-CLASH_ROYALE_BASE_URL=https://proxy.royaleapi.dev/v1
-CLAN_TAG
-```
-
-### Render
-
-O repositorio possui [render.yaml](./render.yaml) para publicar a API no
-Render a partir da pasta `backend`.
-
-Se configurar manualmente no painel do Render, use:
-
-```text
-Root Directory: backend
-Build Command: npm install
-Start Command: npm start
-```
-
-O comando `npm` sozinho nao executa build nem instalacao e causa falha de
-deploy.
-
-## 7. Endpoints do backend
-
-### Sistema
-
-```http
-GET /
-```
-
-Resposta esperada:
+O endpoint de verificação está disponível em `GET /` e responde:
 
 ```text
 WarTracker API is running...
 ```
 
-### Autenticacao
+### Login
 
 ```http
 POST /api/auth/login
@@ -256,229 +157,111 @@ Content-Type: application/json
 }
 ```
 
-Sucesso retorna `success`, `token` e dados basicos do usuario.
+O login consulta o jogador na API do Clash Royale, valida o cargo de líder ou
+co-líder e confirma a associação ao clã configurado. Em caso de sucesso,
+retorna um JWT e os dados básicos do usuário.
 
-Possiveis erros:
+### Rotas protegidas
 
-- `400`: tag ausente;
-- `403`: jogador nao e lider/co-lider, ou pertence a outro cla;
-- `404`: jogador nao encontrado na API oficial;
-- `403`: chave da API invalida ou bloqueada por IP;
-- `500`: erro de banco, ambiente ou comunicacao externa.
-
-### Cla
+Envie o token no cabeçalho abaixo:
 
 ```http
-GET /api/clan/stats
-GET /api/clan/history
-POST /api/clan/attendance
+Authorization: Bearer <token>
 ```
 
-Todas as rotas de clã exigem `Authorization: Bearer <token>`.
-`/api/clan/stats` consulta o cla e a guerra atual. `/api/clan/history`
-consulta o historico de guerras. `/api/clan/attendance` salva ou atualiza
-uma justificativa por membro e data.
+| Método | Rota | Finalidade |
+| --- | --- | --- |
+| `GET` | `/api/clan/stats` | Estatísticas da guerra atual |
+| `GET` | `/api/clan/history` | Histórico de guerras |
+| `POST` | `/api/clan/attendance` | Salva uma justificativa de presença |
+| `GET` | `/api/user/profile` | Consulta o perfil |
+| `PUT` | `/api/user/profile` | Atualiza nome e e-mail |
+| `GET` | `/api/user/preferences` | Consulta preferências |
+| `PUT` | `/api/user/preferences` | Atualiza preferências |
 
-### Usuario
+`GET /api/user` é um endpoint público de informação da API do usuário.
 
-```http
-GET /api/user
-GET /api/user/profile
-PUT /api/user/profile
-GET /api/user/preferences
-PUT /api/user/preferences
-```
+## Deploy
 
-Os endpoints de perfil e preferencias usam JWT.
+### API no Render
 
-## 8. Problema conhecido da API do Clash Royale
-
-Durante os testes, a chave configurada retornou:
-
-```json
-{
-  "reason": "accessDenied.invalidIp",
-  "message": "Invalid authorization: API key does not allow access from IP ..."
-}
-```
-
-Isso significa que a chave existe, mas o IP de origem da chamada nao esta
-autorizado no painel da API. O problema nao e resolvido alterando a tag do
-jogador.
-
-### Como corrigir
-
-1. Abrir o painel onde a chave da API foi criada.
-2. Editar a chave usada em `CLASH_ROYALE_API_KEY`.
-3. Adicionar o IP publico da maquina local, se o backend roda localmente.
-4. Se o backend roda na Vercel, autorizar os IPs de saida exigidos pelo
-   provedor ou usar uma configuracao de chave compativel com serverless.
-5. Salvar a chave e testar novamente.
-6. Reiniciar o backend depois de alterar o `.env`.
-
-Uma chave autorizada localmente pode continuar falhando na Vercel, porque a
-origem da requisicao muda.
-
-Teste manual sem revelar a chave:
-
-```bash
-curl --max-time 15 \
-  -H "Authorization: Bearer $CLASH_ROYALE_API_KEY" \
-  "$CLASH_ROYALE_BASE_URL/players/%23GG9JYGCOP"
-```
-
-## 9. Problema conhecido do MongoDB
-
-O backend tambem apresentou:
+O arquivo [render.yaml](./render.yaml) já define o serviço da API. Para uma
+configuração manual, use:
 
 ```text
-querySrv ENOTFOUND _mongodb._tcp....
+Root Directory: backend
+Build Command: npm install
+Start Command: npm start
 ```
 
-Esse erro ocorre antes das rotas funcionarem e normalmente indica:
-
-- hostname incorreto na `MONGODB_URI`;
-- cluster removido, pausado ou renomeado;
-- problema de DNS ou rede;
-- URI copiada incompleta;
-- senha com caracteres especiais sem URL encoding;
-- IP nao autorizado no MongoDB Atlas.
-
-No Atlas, verificar:
-
-1. **Database Deployments**: o cluster existe e esta disponivel;
-2. **Database Access**: usuario e senha estao corretos;
-3. **Network Access**: o IP de desenvolvimento esta liberado;
-4. copiar novamente a URI em **Connect > Drivers**.
-
-## 10. Por que a tela ficava carregando indefinidamente
-
-Havia uma cadeia de requisicoes externas sem limite adequado:
+Configure no Render as variáveis `MONGODB_URI`, `JWT_SECRET`,
+`CLASH_ROYALE_API_KEY` e `CLAN_TAG`. A variável
+`CLASH_ROYALE_BASE_URL` pode usar:
 
 ```text
-Frontend -> Backend -> MongoDB/API do Clash Royale
+https://proxy.royaleapi.dev/v1
 ```
 
-Se o MongoDB ou a API externa nao respondessem, o frontend permanecia
-aguardando. Foram adicionados limites:
+Depois do deploy, valide a instalação acessando `GET /` na URL pública.
 
-- Axios para a API do Clash Royale: 10 segundos;
-- conexao Mongoose: 10 segundos;
-- login no frontend: 15 segundos com `AbortController`.
+### Frontend
 
-Agora o usuario deve receber uma mensagem de erro em vez de esperar
-indefinidamente. Isso nao corrige credenciais ou rede: apenas torna a falha
-visivel.
+No provedor escolhido, configure `VITE_API_URL` com a URL pública da API, por
+exemplo:
 
-## 11. Principais erros e diagnostico
-
-### `ENOENT ... package.json`
-
-O comando foi executado na raiz do repositorio. Usar:
-
-```bash
-cd backend
-npm install
-npm run dev
+```text
+https://wartracker-api.onrender.com
 ```
 
-### `Cannot find module 'mongoose'`
+Não inclua Markdown, parênteses, colchetes ou o caminho `/api` nesse valor.
 
-As dependencias do backend nao foram instaladas ou `node_modules` esta
-incompleto:
-
-```bash
-cd backend
-npm install
-```
-
-### `Variaveis de ambiente ausentes`
-
-O `.env` nao existe, esta na pasta errada ou tem uma variavel vazia. Ele deve
-ficar em `backend/.env`.
+## Diagnóstico
 
 ### `accessDenied.invalidIp`
 
-A chave da API do Clash Royale nao permite o IP que esta fazendo a chamada.
-Corrigir a lista de IPs autorizados no provedor da API.
-
-### `Erro de Autenticacao (Verifique IP/Chave no .env)`
-
-Mensagem gerada pelo backend quando a API externa retorna `403`. Conferir
-chave, IP autorizado e se o backend esta rodando localmente ou na Vercel.
+A chave do Clash Royale não autoriza o IP que está fazendo a requisição.
+Atualize a lista de IPs autorizados no painel onde a chave foi criada. O IP
+local e o IP de saída de um provedor de hospedagem podem ser diferentes.
 
 ### `querySrv ENOTFOUND`
 
-Falha de DNS ou hostname do MongoDB. Revalidar `MONGODB_URI`.
+O MongoDB não conseguiu resolver o endereço informado. Confira a URI, o
+status do cluster, o usuário, a senha, o DNS e a liberação de rede no MongoDB
+Atlas. Senhas com caracteres especiais precisam estar codificadas na URI.
+
+### Variáveis de ambiente ausentes
+
+Confirme que o arquivo está em `backend/.env`, que os nomes estão corretos e
+que nenhum valor obrigatório está vazio. Reinicie a API após qualquer
+alteração.
 
 ### CORS
 
-O backend permite algumas origens fixas, incluindo portas comuns do Vite.
-Se o frontend for executado em outra porta ou dominio, a origem precisa ser
-adicionada na lista `allowedOrigins` de `backend/server.js`.
+O backend permite as origens locais mais comuns do Vite e os domínios
+configurados no código. Se o frontend for publicado em outro domínio, essa
+origem precisa ser adicionada à lista `allowedOrigins` em
+`backend/server.js`.
 
-### API local e frontend publicado misturados
+### A aplicação fica carregando
 
-O frontend local e configurado para usar `localhost:5000` em modo dev. Se
-`VITE_API_URL` for definido apontando para o Render, o login local continuara
-dependente da infraestrutura publicada.
+O dashboard depende do MongoDB e da API do Clash Royale. A aplicação possui
+limites de tempo para essas chamadas; verifique os logs do backend e teste
+primeiro `GET /` para separar problemas de disponibilidade da API de erros de
+integração.
 
-## 12. Estado da validacao atual
+## Segurança e operação
 
-Validacoes realizadas durante a investigacao:
+- Não execute `backend/seed.js` em produção: ele remove usuários e clãs antes
+  de inserir dados de exemplo.
+- Use um `JWT_SECRET` longo, aleatório e diferente em cada ambiente.
+- Restrinja o acesso de rede do MongoDB e da chave do Clash Royale aos IPs
+  necessários.
+- O token é mantido no `localStorage` pelo frontend; mantenha a política de
+  CORS e a proteção contra XSS atualizadas.
+- A API externa é consultada durante o carregamento do dashboard. Em cenários
+  de uso intenso, considere cache e tratamento de rate limit.
 
-- dependencias do backend restauradas com `npm install`;
-- sintaxe dos principais arquivos do backend validada;
-- build de producao do frontend concluido com sucesso;
-- endpoint publicado `GET /` respondeu `200`;
-- login publicado com `#GG9JYGCOP` ficou sem resposta dentro do limite de
-  teste;
-- chamada direta da API oficial retornou `accessDenied.invalidIp`;
-- lint do frontend ainda possui erros preexistentes em `App.jsx` e
-  `Dashboard.jsx`, mas eles nao impedem o build de producao.
+## Licença
 
-## 13. Pontos de atencao no codigo
-
-Estes pontos podem causar problemas futuros e devem ser considerados na
-proxima revisao:
-
-1. `backend/seed.js` apaga todos os usuarios e clas antes de inserir dados de
-   exemplo. Nao executar em producao.
-2. O usuario criado durante o login recebe `password: 'no-password'`; a senha
-   nao e usada no fluxo atual, mas nao deve ser tratada como mecanismo de
-   seguranca.
-3. O endpoint `PUT /api/user/profile` usa `Object.assign(user, req.body)`.
-   Isso foi corrigido para permitir apenas campos editaveis de perfil, mas
-   deve continuar sendo revisado quando novos campos forem adicionados.
-4. O endpoint de presenca de guerra deve ser protegido por autorizacao se
-   apenas lideres puderem registrar justificativas. As rotas do cla ja exigem
-   JWT; uma regra de autorizacao por cargo ainda pode ser adicionada.
-5. JWT em `localStorage` fica exposto a qualquer XSS executado na pagina.
-6. A API oficial e chamada durante cada carregamento do dashboard, o que pode
-   atingir limites de requisicao e aumentar a latencia. Cache e tratamento de
-   rate limit podem ser necessarios.
-7. O backend salva dados do cla localmente, mas ainda depende da API externa
-   para responder estatisticas e historico.
-8. Nao existem testes automatizados no script do backend:
-   `npm test` atualmente termina com erro proposital.
-
-## 14. Checklist para pedir ajuda a outra IA
-
-Ao enviar este projeto para analise, incluir:
-
-- a mensagem exata do erro;
-- se o backend esta local, na Vercel ou em outro provedor;
-- resultado de `GET /`;
-- resultado do teste da API oficial sem incluir a chave;
-- se o IP esta autorizado na API do Clash Royale;
-- se o MongoDB Atlas esta acessivel e com o IP liberado;
-- a porta e a URL usadas pelo frontend;
-- versoes de Node e npm.
-
-Nunca incluir:
-
-- `backend/.env`;
-- `CLASH_ROYALE_API_KEY`;
-- `MONGODB_URI` com usuario e senha;
-- `JWT_SECRET`;
-- tokens JWT reais.
+O projeto ainda não define uma licença de distribuição. Consulte os
+responsáveis pelo repositório antes de redistribuir o código.
