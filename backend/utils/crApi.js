@@ -1,7 +1,23 @@
 const axios = require('axios');
 require('dotenv').config();
 
-const baseURL = (process.env.CLASH_ROYALE_BASE_URL || 'https://proxy.royaleapi.dev/v1').replace(/\/+$/, '');
+const normalizeBaseUrl = (value) => {
+    const configuredUrl = String(value || '').trim();
+    const urlMatch = configuredUrl.match(/https?:\/\/[^)\]\s]+/i);
+    const candidate = (urlMatch ? urlMatch[0] : configuredUrl).replace(/\/+$/, '');
+    const fallback = 'https://proxy.royaleapi.dev/v1';
+
+    try {
+        const parsed = new URL(candidate || fallback);
+        if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('protocolo inválido');
+        return parsed.toString().replace(/\/+$/, '');
+    } catch (error) {
+        console.error('CLASH_ROYALE_BASE_URL inválida; usando o proxy padrão:', error.message);
+        return fallback;
+    }
+};
+
+const baseURL = normalizeBaseUrl(process.env.CLASH_ROYALE_BASE_URL);
 
 const crApi = axios.create({
     baseURL,
