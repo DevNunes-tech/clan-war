@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { Crown, ArrowRight, ShieldCheck, Loader2, Swords, LockKeyhole, Sparkles, BadgeCheck } from 'lucide-react';
-
-const API_URL = import.meta.env.VITE_API_URL
-    || (import.meta.env.DEV ? 'http://localhost:5000' : 'https://clan-war-yyeq.vercel.app');
+import API_URL from '../utils/api';
 
 export default function LoginPage({ onNavigate }) {
     const [playerTag, setPlayerTag] = useState('');
