@@ -473,18 +473,18 @@ export default function Dashboard({ onNavigate }) {
     ];
 
     return (
-        <div className="wt-dashboard min-h-screen bg-[#070B14] flex font-sans text-slate-100">
+        <div className="wt-dashboard min-h-screen bg-[#050f21] flex font-sans text-slate-100">
             <aside className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-[#0B1220] text-slate-300 transform transition-transform duration-300 ease-in-out border-r border-white/6
+        fixed inset-y-0 left-0 z-50 w-64 bg-[#091b38] text-slate-300 transform transition-transform duration-300 ease-in-out border-r-2 border-[#1c3f73]
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:static lg:block
       `}>
                 <div className="h-full flex flex-col">
-                    <div className="h-20 flex items-center px-6 bg-[#09101C] border-b border-white/6 cursor-pointer" onClick={() => handleTabChange('guerra')}>
+                    <div className="h-20 flex items-center px-5 bg-[#071733] border-b-2 border-[#0d2242] cursor-pointer" onClick={() => handleTabChange('guerra')}>
                         <div className="flex items-center gap-3">
-                            <Crown className="h-8 w-8 text-amber-500 fill-amber-500" />
+                            <div className="relative flex h-11 w-11 items-center justify-center rounded-2xl border-2 border-[#4f3100] bg-gradient-to-b from-[#ffdb4d] to-[#c78000] shadow-[0_3px_0_#694000]"><div className="btn-gloss" /><Crown className="relative h-6 w-6 fill-[#0b1730] text-[#0b1730]" /></div>
                             <div>
-                                <span className="font-black text-white text-lg block leading-none underline decoration-amber-500 underline-offset-4 decoration-2">{clanStats.name}</span>
-                                <span className="text-xs text-slate-400 font-bold uppercase">{clanStats.tag}</span>
+                                <span className="font-clash text-yellow-300 text-lg block leading-none stroke-black-sm">{clanStats.name}</span>
+                                <span className="text-[10px] text-blue-300 font-bold uppercase">{clanStats.tag} • QG de guerra</span>
                             </div>
                         </div>
                         <button className="lg:hidden ml-auto text-slate-500 hover:text-white" onClick={() => setSidebarOpen(false)}>
@@ -492,12 +492,12 @@ export default function Dashboard({ onNavigate }) {
                         </button>
                     </div>
 
-                    <nav className="flex-1 px-4 py-5 space-y-2 overflow-y-auto">
+                    <nav className="flex-1 px-3 py-5 space-y-1.5 overflow-y-auto">
                         {navigationTabs.map((tab) => (
                             <button
                                 key={tab.id}
                                 onClick={() => handleTabChange(tab.id)}
-                                className={`flex items-center gap-3 px-4 py-3 w-full rounded-xl font-bold transition-all ${activeTab === tab.id ? 'bg-blue-600/20 text-blue-400 border border-blue-600/30' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+                                className={`flex items-center gap-3 px-3.5 py-3 w-full rounded-2xl font-clash text-base uppercase tracking-wide transition-all ${activeTab === tab.id ? 'bg-gradient-to-b from-[#ffbe0b] to-[#c78000] text-white border border-[#6b4200] shadow-[0_3px_0_#5e3800]' : 'text-blue-200 hover:bg-[#102a54] hover:text-white'}`}
                             >
                                 {tab.id === 'guerra' && <Ship className="h-5 w-5" />}
                                 {tab.id === 'membros' && <Users className="h-5 w-5" />}
@@ -510,10 +510,10 @@ export default function Dashboard({ onNavigate }) {
                         ))}
                     </nav>
 
-                    <div className="p-4 bg-[#09101C] border-t border-white/6">
+                    <div className="p-4 bg-[#071733] border-t border-[#0d2242]">
                         <button
                             onClick={() => onNavigate('landing')}
-                            className="flex items-center gap-3 px-4 py-3 w-full text-red-400 hover:bg-red-400/10 rounded-xl font-bold transition-colors"
+                            className="flex items-center gap-3 px-4 py-3 w-full text-red-300 hover:bg-red-400/10 rounded-2xl font-clash uppercase transition-colors"
                         >
                             <LogOut className="h-5 w-5" /> Sair do Painel
                         </button>
@@ -522,22 +522,22 @@ export default function Dashboard({ onNavigate }) {
             </aside>
 
             <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-                <header className="h-20 bg-[#0B1220]/95 backdrop-blur border-b border-white/6 flex items-center justify-between px-4 sm:px-6 lg:px-8 z-30">
+                <header className="h-20 bg-[#071733]/95 backdrop-blur border-b-4 border-[#030a17] flex items-center justify-between px-4 sm:px-6 lg:px-8 z-30 shadow-[0_6px_20px_rgba(0,0,0,0.8)]">
                     <div className="flex items-center gap-4">
                         <button
-                            className="lg:hidden text-slate-500 hover:text-slate-700 p-2 bg-slate-100 rounded-lg"
+                            className="lg:hidden text-blue-200 hover:text-white p-2 bg-[#0e274f] rounded-xl border border-[#225096]"
                             onClick={() => setSidebarOpen(true)}
                         >
                             <Menu className="h-6 w-6" />
                         </button>
-                        <div className="hidden sm:flex items-center bg-white/5 rounded-xl px-4 py-2.5 w-72 border border-white/6 focus-within:border-blue-400/50 focus-within:bg-white/8 transition-colors">
+                        <div className="hidden sm:flex items-center bg-[#051124] rounded-xl px-4 py-2.5 w-72 border-2 border-[#1c4078] focus-within:border-yellow-400 transition-colors">
                             <Search className="h-5 w-5 text-slate-400 mr-2" />
                             <input
                                 type="text"
                                 placeholder="Buscar membro..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="bg-transparent border-none outline-none text-sm w-full text-slate-700 font-medium"
+                                className="bg-transparent border-none outline-none text-sm w-full text-white font-medium placeholder:text-blue-400/50"
                             />
                         </div>
                     </div>
@@ -634,7 +634,7 @@ export default function Dashboard({ onNavigate }) {
                     </div>
                 </header>
 
-                <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 bg-[#070B14]">
+                <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 bg-[#050f21]">
                     <div className="mx-auto max-w-7xl space-y-6">
 
                         {activeTab === 'guerra' && (
