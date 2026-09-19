@@ -35,7 +35,12 @@ router.put('/profile', auth, async (req, res) => {
     try {
         const user = await User.findById(req.user.id);
         if (user) {
-            Object.assign(user, req.body);
+            const allowedFields = ['name', 'email'];
+            allowedFields.forEach((field) => {
+                if (req.body[field] !== undefined) {
+                    user[field] = req.body[field];
+                }
+            });
             await user.save();
             res.json({
                 success: true,
