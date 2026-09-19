@@ -1,5 +1,5 @@
 const API_URL = import.meta.env.VITE_API_URL
-  || (import.meta.env.DEV ? 'http://localhost:5000' : 'https://clan-war-yyeq.vercel.app');
+  || (import.meta.env.DEV ? 'http://localhost:5000' : 'https://clan-war.onrender.com');
 
 export function buildUrl(path, params = {}) {
   const url = new URL(path, API_URL);
