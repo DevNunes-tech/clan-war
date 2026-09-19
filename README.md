@@ -131,7 +131,7 @@ PORT=5000
 MONGODB_URI=mongodb+srv://usuario:senha@cluster.mongodb.net/wartracker
 JWT_SECRET=um-segredo-longo-e-aleatorio
 CLASH_ROYALE_API_KEY=sua-chave-da-api-do-clash-royale
-CLASH_ROYALE_BASE_URL=https://api.clashroyale.com/v1
+CLASH_ROYALE_BASE_URL=https://proxy.royaleapi.dev/v1
 CLAN_TAG=#GG9JYGCOP
 ```
 
@@ -143,7 +143,7 @@ Variaveis obrigatorias:
 | `MONGODB_URI` | URI completa do MongoDB Atlas ou MongoDB local. |
 | `JWT_SECRET` | Segredo usado para assinar e validar tokens. |
 | `CLASH_ROYALE_API_KEY` | Chave usada nas chamadas da API oficial. |
-| `CLASH_ROYALE_BASE_URL` | Normalmente `https://api.clashroyale.com/v1`. |
+| `CLASH_ROYALE_BASE_URL` | Proxy configurado: `https://proxy.royaleapi.dev/v1`. |
 | `CLAN_TAG` | Cla monitorado, com ou sem `#`. |
 
 Nunca envie o `.env` para o Git, para um chat ou para uma ferramenta de IA.
@@ -211,7 +211,7 @@ No Render, configure as variaveis do backend:
 MONGODB_URI
 JWT_SECRET
 CLASH_ROYALE_API_KEY
-CLASH_ROYALE_BASE_URL=https://api.clashroyale.com/v1
+CLASH_ROYALE_BASE_URL=https://proxy.royaleapi.dev/v1
 CLAN_TAG
 ```
 
