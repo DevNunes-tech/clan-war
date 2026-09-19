@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { Crown, ArrowRight, ShieldCheck, Loader2, Swords, LockKeyhole, Sparkles, BadgeCheck } from 'lucide-react';
-
-const API_URL = import.meta.env.VITE_API_URL
-    || (import.meta.env.DEV ? 'http://localhost:5000' : 'https://clan-war-yyeq.vercel.app');
+import { buildUrl } from '../utils/api';
 
 export default function LoginPage({ onNavigate }) {
     const [playerTag, setPlayerTag] = useState('');
@@ -17,7 +15,7 @@ export default function LoginPage({ onNavigate }) {
         const timeoutId = window.setTimeout(() => controller.abort(), 15000);
 
         try {
-            const response = await fetch(API_URL + '/api/auth/login', {
+            const response = await fetch(buildUrl('/api/auth/login'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ playerTag }),

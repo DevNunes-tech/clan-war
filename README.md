@@ -131,7 +131,7 @@ PORT=5000
 MONGODB_URI=mongodb+srv://usuario:senha@cluster.mongodb.net/wartracker
 JWT_SECRET=um-segredo-longo-e-aleatorio
 CLASH_ROYALE_API_KEY=sua-chave-da-api-do-clash-royale
-CLASH_ROYALE_BASE_URL=https://api.clashroyale.com/v1
+CLASH_ROYALE_BASE_URL=https://proxy.royaleapi.dev/v1
 CLAN_TAG=#GG9JYGCOP
 ```
 
@@ -143,7 +143,7 @@ Variaveis obrigatorias:
 | `MONGODB_URI` | URI completa do MongoDB Atlas ou MongoDB local. |
 | `JWT_SECRET` | Segredo usado para assinar e validar tokens. |
 | `CLASH_ROYALE_API_KEY` | Chave usada nas chamadas da API oficial. |
-| `CLASH_ROYALE_BASE_URL` | Normalmente `https://api.clashroyale.com/v1`. |
+| `CLASH_ROYALE_BASE_URL` | Proxy configurado: `https://proxy.royaleapi.dev/v1`. |
 | `CLAN_TAG` | Cla monitorado, com ou sem `#`. |
 
 Nunca envie o `.env` para o Git, para um chat ou para uma ferramenta de IA.
@@ -179,13 +179,40 @@ Em desenvolvimento, o frontend usa `http://localhost:5000` quando
 `VITE_API_URL` nao foi definido. Em producao, o fallback atual e:
 
 ```text
-https://clan-war-yyeq.vercel.app
+https://clan-war.onrender.com
 ```
 
 Para apontar explicitamente para uma API:
 
 ```bash
 VITE_API_URL=https://seu-backend.exemplo npm run build
+```
+
+Na Vercel, o valor deve ser somente a URL, sem Markdown, colchetes,
+parênteses ou caminho de endpoint:
+
+```text
+https://clan-war.onrender.com
+```
+
+Não use valores como
+`[https://clan-war.onrender.com](https://clan-war.onrender.com)` nem
+`https://clan-war.onrender.com/api`.
+
+Na Vercel, configure a variavel de ambiente do frontend:
+
+```env
+VITE_API_URL=https://clan-war.onrender.com
+```
+
+No Render, configure as variaveis do backend:
+
+```text
+MONGODB_URI
+JWT_SECRET
+CLASH_ROYALE_API_KEY
+CLASH_ROYALE_BASE_URL=https://proxy.royaleapi.dev/v1
+CLAN_TAG
 ```
 
 ### Render
@@ -247,6 +274,7 @@ GET /api/clan/history
 POST /api/clan/attendance
 ```
 
+Todas as rotas de clã exigem `Authorization: Bearer <token>`.
 `/api/clan/stats` consulta o cla e a guerra atual. `/api/clan/history`
 consulta o historico de guerras. `/api/clan/attendance` salva ou atualiza
 uma justificativa por membro e data.
@@ -392,7 +420,7 @@ adicionada na lista `allowedOrigins` de `backend/server.js`.
 ### API local e frontend publicado misturados
 
 O frontend local e configurado para usar `localhost:5000` em modo dev. Se
-`VITE_API_URL` for definido apontando para a Vercel, o login local continuara
+`VITE_API_URL` for definido apontando para o Render, o login local continuara
 dependente da infraestrutura publicada.
 
 ## 12. Estado da validacao atual

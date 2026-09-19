@@ -15,6 +15,6 @@ services:
       - key: CLASH_ROYALE_API_KEY
         sync: false
       - key: CLASH_ROYALE_BASE_URL
-        value: https://api.clashroyale.com/v1
+        value: https://proxy.royaleapi.dev/v1
       - key: CLAN_TAG
         sync: false

@@ -1,7 +1,7 @@
 const axios = require('axios');
 require('dotenv').config();
 
-const baseURL = (process.env.CLASH_ROYALE_BASE_URL || 'https://api.clashroyale.com/v1').replace(/\/+$/, '');
+const baseURL = (process.env.CLASH_ROYALE_BASE_URL || 'https://proxy.royaleapi.dev/v1').replace(/\/+$/, '');
 
 const crApi = axios.create({
     baseURL,
