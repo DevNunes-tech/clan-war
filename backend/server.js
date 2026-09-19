@@ -14,7 +14,6 @@ const allowedOrigins = [
     'http://localhost:4173',
     'http://localhost:5173',
     'https://clan-war.vercel.app',
-    'https://clan-war-yyeq.vercel.app',
     'https://brootherwood.com.br',
     'http://brootherwood.com.br',
     'https://www.brootherwood.com.br'
