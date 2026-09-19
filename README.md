@@ -263,6 +263,7 @@ GET /api/clan/history
 POST /api/clan/attendance
 ```
 
+Todas as rotas de clã exigem `Authorization: Bearer <token>`.
 `/api/clan/stats` consulta o cla e a guerra atual. `/api/clan/history`
 consulta o historico de guerras. `/api/clan/attendance` salva ou atualiza
 uma justificativa por membro e data.

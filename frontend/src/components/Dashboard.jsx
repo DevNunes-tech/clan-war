@@ -316,7 +316,7 @@ export default function Dashboard({ onNavigate }) {
                 if (prefsRes.ok) setPrefs(normalizePreferences(await prefsRes.json()));
                 else if (prefsRes.status === 401) onNavigate('login');
 
-                const clanRes = await fetch(buildUrl('/api/clan/stats'), { headers });
+                const clanRes = await fetch(`${API_URL}/api/clan/stats`, { headers });
                 const clanData = await clanRes.json();
 
                 if (clanRes.ok) {
@@ -341,7 +341,7 @@ export default function Dashboard({ onNavigate }) {
                     setWarAttendance([]);
                 }
 
-                const historyRes = await fetch(buildUrl('/api/clan/history'), { headers });
+                const historyRes = await fetch(`${API_URL}/api/clan/history`, { headers });
                 if (historyRes.ok) {
                     setWarHistory(normalizeWarHistory(await historyRes.json()));
                 }
