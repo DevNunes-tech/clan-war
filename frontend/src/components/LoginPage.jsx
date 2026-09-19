@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Crown, ArrowRight, ShieldCheck, Loader2, Swords, LockKeyhole, Sparkles, BadgeCheck } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://clan-war-yyeq.vercel.app';
+const API_URL = import.meta.env.VITE_API_URL
+    || (import.meta.env.DEV ? 'http://localhost:5000' : 'https://clan-war-yyeq.vercel.app');
 
 export default function LoginPage({ onNavigate }) {
     const [playerTag, setPlayerTag] = useState('');
@@ -12,12 +13,15 @@ export default function LoginPage({ onNavigate }) {
         e.preventDefault();
         setLoading(true);
         setError('');
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort(), 15000);
 
         try {
             const response = await fetch(API_URL + '/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ playerTag })
+                body: JSON.stringify({ playerTag }),
+                signal: controller.signal
             });
 
             const data = await response.json();
@@ -30,8 +34,11 @@ export default function LoginPage({ onNavigate }) {
                 setError(data.message || 'Erro ao realizar login');
             }
         } catch (err) {
-            setError('Erro ao conectar com o servidor. Tente novamente.');
+            setError(err.name === 'AbortError'
+                ? 'O servidor demorou para responder. Verifique o backend e tente novamente.'
+                : 'Erro ao conectar com o servidor. Tente novamente.');
         } finally {
+            window.clearTimeout(timeoutId);
             setLoading(false);
         }
     };
