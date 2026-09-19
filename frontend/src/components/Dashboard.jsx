@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
     Crown,
     Swords,
@@ -27,15 +27,16 @@ import {
     Share2,
     FileText,
     Sparkles,
-    Radar,
     LayoutGrid,
-    Activity,
     TrendingUp,
-    Monitor,
     MessageSquare
 } from 'lucide-react';
 
 import API_URL, { buildUrl } from '../utils/api';
+import WarDashboard from '../pages/WarDashboard';
+import MemberDetailModal from './guerra/MemberDetailModal';
+import WarningsTable from './advertencias/WarningsTable';
+import { normalizeMemberWarData } from '../utils/warRules';
 
 const getAuthHeaders = (extraHeaders = {}) => {
     const token = localStorage.getItem('token');
@@ -71,164 +72,96 @@ const normalizePreferences = (data = {}) => {
     return { ...defaultPreferences, ...prefs };
 };
 
+const translateRole = (role) => {
+    const roles = {
+        leader: 'Líder',
+        coLeader: 'Co-líder',
+        elder: 'Ancião',
+        member: 'Membro'
+    };
+    return roles[role] || role;
+};
+
 const normalizeClanStats = (data = {}) => ({
     name: data.name || 'Clã não encontrado',
     tag: data.tag || '#---',
-    warDay: data.warDay ?? '?',
-    medals: Number(data.medals || 0),
+    war: data.war || {},
+    today: data.today || {},
+    analysis: data.analysis || null,
+    latestDay: data.latestDay || null,
+    periodLogs: Array.isArray(data.periodLogs) ? data.periodLogs : [],
+    fame: Number(data.fame || data.war?.fame || 0),
     pendingAttacks: Number(data.pendingAttacks || 0),
     membersParticipating: Number(data.membersParticipating || 0),
     totalMembers: Number(data.totalMembers || 0),
-    isWarDay: Boolean(data.isWarDay),
+    isWarDay: Boolean(data.war?.isWarDay ?? data.isWarDay),
     missedDecksToday: Array.isArray(data.missedDecksToday) ? data.missedDecksToday : [],
     endOfDayAlert: Boolean(data.endOfDayAlert),
     warAttendance: Array.isArray(data.warAttendance) ? data.warAttendance : [],
     members: Array.isArray(data.members) ? data.members : []
 });
 
-const normalizeClanMember = (member = {}, isWarDay = false) => {
-    const status = isWarDay ? member.status : 'Treino';
-    const decksUsedCount = Number(member.decksUsed || 0);
-    const decksMissing = Math.max(0, 4 - decksUsedCount);
-    let scoreClass = 'bg-white/5 text-slate-300 border border-white/5';
-
-    if (isWarDay) {
-        scoreClass = member.status === 'Concluído'
-            ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/20'
-            : (member.status === 'Em Batalha' ? 'bg-amber-500/15 text-amber-300 border border-amber-500/20' : 'bg-red-500/15 text-red-300 border border-red-500/20');
-    }
-
-    return {
-        id: member.id || member.tag || member._id || '',
-        name: member.name || 'Sem nome',
-        role: member.role || 'member',
-        trophies: Number(member.trophies || 0),
-        decksUsed: `${decksUsedCount}/4`,
-        decksUsedCount,
-        decksMissing,
-        medals: Number(member.medals || 0),
-        status,
-        score: scoreClass
-    };
-};
-
 const normalizeWarHistory = (data = {}) => ({
-    weekHeaders: Array.isArray(data.weekHeaders) ? data.weekHeaders : [],
+    weekHeaders: Array.isArray(data.warHeaders) ? data.warHeaders : (Array.isArray(data.weekHeaders) ? data.weekHeaders : []),
     members: Array.isArray(data.members) ? data.members : []
 });
 
+const dashboardTabs = ['guerra', 'ranking', 'membros', 'historico', 'advertencias', 'relatorios', 'perfil', 'configs', 'preferencias'];
+
+const getDashboardTab = () => {
+    const pathTab = window.location.pathname.match(/^\/dashboard\/?([^/]+)?/)?.[1];
+    if (dashboardTabs.includes(pathTab)) return pathTab;
+    const storedTab = localStorage.getItem('activeTab');
+    return dashboardTabs.includes(storedTab) ? storedTab : 'guerra';
+};
+
 export default function Dashboard({ onNavigate }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [activeTab, setActiveTab] = useState(localStorage.getItem('activeTab') || 'guerra');
-    const sectionRefs = useRef({});
-
-    const registerSectionRef = (tab) => (node) => {
-        if (node) {
-            sectionRefs.current[tab] = node;
-        }
-    };
-
-    const tabViews = {
-        guerra: {
-            kicker: 'Visão estratégica do clã',
-            title: 'Guerra Atual',
-            description: 'Ataques pendentes, status diário, justificativas e risco de inatividade em um só painel.',
-            badge: 'Controle de guerra',
-            highlights: ['Ataques de hoje', 'Justificativas registradas', 'Fechamento diário']
-        },
-        ranking: {
-            kicker: 'Desempenho competitivo',
-            title: 'Ranking',
-            description: 'Compare medalhas, consistência e força dos 5 melhores jogadores do clã.',
-            badge: 'Top 5 do clã',
-            highlights: ['Top guerreiros', 'Comparação semanal', 'Média por membro']
-        },
-        membros: {
-            kicker: 'Gestão operacional',
-            title: 'Membros',
-            description: 'Veja troféus, tags e detalhe de cada jogador sem sair do painel principal.',
-            badge: 'Ficha do guerreiro',
-            highlights: ['Lista completa', 'Busca rápida', 'Perfil individual']
-        },
-        historico: {
-            kicker: 'Memória de guerra',
-            title: 'Histórico',
-            description: 'Acompanhe a evolução semanal e o desempenho consolidado dos últimos ciclos.',
-            badge: 'Linha do tempo',
-            highlights: ['Semanas anteriores', 'Média histórica', 'Exportação rápida']
-        },
-        heatmap: {
-            kicker: 'Mapa de atividade',
-            title: 'Heatmap',
-            description: 'Identifique os dias mais fortes e os períodos de queda de atividade do clã.',
-            badge: 'Atividade recente',
-            highlights: ['Últimos 35 dias', 'Picos de atividade', 'Janelas fracas']
-        },
-        analise: {
-            kicker: 'Leitura tática',
-            title: 'Análise',
-            description: 'Resumo inteligente para priorizar quem precisa de atenção, incentivo ou cobrança.',
-            badge: 'Insights do líder',
-            highlights: ['Alertas de risco', 'Leitura rápida', 'Ação tática']
-        },
-        relatorios: {
-            kicker: 'Entrega executiva',
-            title: 'Relatórios',
-            description: 'Agrupe métricas importantes para compartilhar com o clã ou guardar como registro.',
-            badge: 'Resumo exportável',
-            highlights: ['Top 5', 'Resumo visual', 'Compartilhar']
-        },
-        tv: {
-            kicker: 'Modo exibição',
-            title: 'TV',
-            description: 'Painel ao vivo com métricas amplas para deixar aberto em tela cheia ou no monitor do clã.',
-            badge: 'Painel ao vivo',
-            highlights: ['Tela grande', 'Acesso rápido', 'Visão ao vivo']
-        },
-        perfil: {
-            kicker: 'Conta do líder',
-            title: 'Perfil',
-            description: 'Atualize nome, tag e e-mail do responsável pelo painel com segurança.',
-            badge: 'Identidade do líder',
-            highlights: ['Nome de guerra', 'Tag vinculada', 'E-mail de acesso']
-        },
-        configs: {
-            kicker: 'Ajustes do painel',
-            title: 'Configurações',
-            description: 'Gerencie preferências de notificação, mensagens automáticas e idioma da interface.',
-            badge: 'Preferências gerais',
-            highlights: ['Notificações', 'DM automática', 'Idioma']
-        },
-        preferencias: {
-            kicker: 'Ajustes pessoais',
-            title: 'Preferências',
-            description: 'Customize as notificações e a experiência de uso sem sair do painel.',
-            badge: 'Preferências do usuário',
-            highlights: ['Push', 'Mensagens automáticas', 'Idioma']
-        }
-    };
-
-    const activeView = tabViews[activeTab] || tabViews.guerra;
+    const [activeTab, setActiveTab] = useState(getDashboardTab);
 
     const handleTabChange = (tab) => {
+        if (!dashboardTabs.includes(tab)) return;
         setActiveTab(tab);
         localStorage.setItem('activeTab', tab);
-        setSidebarOpen(false); // Common behavior for sidebar buttons
-        window.requestAnimationFrame(() => {
-            sectionRefs.current[tab]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        });
+        setSidebarOpen(false);
+        const nextPath = `/dashboard/${tab}`;
+        if (window.location.pathname !== nextPath) {
+            window.history.pushState({ tab }, '', nextPath);
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
+
+    React.useEffect(() => {
+        const handlePopState = () => setActiveTab(getDashboardTab());
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, []);
 
     const [showNotifications, setShowNotifications] = useState(false);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
 
-    const [profile, setProfile] = useState({
-        id: '',
-        name: 'Carregando...',
-        tag: '#---',
-        email: '',
-        role: '...',
-        preferences: defaultPreferences
+    const [profile, setProfile] = useState(() => {
+        const storedUser = localStorage.getItem('user');
+        if (!storedUser) {
+            return {
+                id: '',
+                name: 'Carregando...',
+                tag: '#---',
+                email: '',
+                role: '...',
+                preferences: defaultPreferences
+            };
+        }
+
+        try {
+            const userData = JSON.parse(storedUser);
+            return {
+                ...normalizeProfile(userData),
+                role: translateRole(userData.role)
+            };
+        } catch {
+            return normalizeProfile();
+        }
     });
 
     const [prefs, setPrefs] = useState({
@@ -241,8 +174,9 @@ export default function Dashboard({ onNavigate }) {
     const [clanStats, setClanStats] = useState({
         name: 'Carregando...',
         tag: '#---',
-        warDay: '...',
-        medals: 0,
+        war: {},
+        today: {},
+        fame: 0,
         pendingAttacks: 0,
         membersParticipating: 0,
         totalMembers: 0,
@@ -271,129 +205,124 @@ export default function Dashboard({ onNavigate }) {
         return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
     };
 
-    const translateRole = (role) => {
-        const roles = {
-            'leader': 'Líder',
-            'coLeader': 'Co-líder',
-            'elder': 'Ancião',
-            'member': 'Membro'
-        };
-        return roles[role] || role;
-    };
+    const fetchData = React.useCallback(async () => {
+        const headers = getAuthHeaders();
 
-    React.useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-            const userData = JSON.parse(storedUser);
-            setProfile(prev => ({
-                ...prev,
-                ...normalizeProfile(userData),
-                role: translateRole(userData.role)
-            }));
+        if (!headers) {
+            onNavigate('login');
+            return;
         }
 
-        const fetchData = async () => {
-            const headers = getAuthHeaders();
+        try {
+            const profileRes = await fetch(API_URL + '/api/user/profile', { headers });
+            if (profileRes.ok) {
+                const profileData = await profileRes.json();
+                setProfile(prev => ({
+                    ...prev,
+                    ...normalizeProfile(profileData),
+                    role: translateRole(profileData.role)
+                }));
+            }
+            else if (profileRes.status === 401) onNavigate('login');
 
-            if (!headers) {
-                onNavigate('login');
-                return;
+            const prefsRes = await fetch(API_URL + '/api/user/preferences', { headers });
+            if (prefsRes.ok) setPrefs(normalizePreferences(await prefsRes.json()));
+            else if (prefsRes.status === 401) onNavigate('login');
+
+            const clanRes = await fetch(`${API_URL}/api/clan/stats`, { headers });
+            const clanData = await clanRes.json();
+
+            console.log('=== PAYLOAD BRUTO RECEBIDO DA GUERRA ===', clanData);
+            if (clanData?.clan?.participants || clanData?.participants || Array.isArray(clanData)) {
+                const participantSample = clanData?.clan?.participants || clanData?.participants || clanData;
+                console.log('=== EXEMPLO DE 1 PARTICIPANTE BRUTO ===', Array.isArray(participantSample) ? participantSample[0] : participantSample);
             }
 
-            try {
-                const profileRes = await fetch(API_URL + '/api/user/profile', { headers });
-                if (profileRes.ok) {
-                    const profileData = await profileRes.json();
-                    setProfile(prev => ({
-                        ...prev,
-                        ...normalizeProfile(profileData),
-                        role: translateRole(profileData.role)
-                    }));
-                }
-                else if (profileRes.status === 401) onNavigate('login');
-
-                const prefsRes = await fetch(API_URL + '/api/user/preferences', { headers });
-                if (prefsRes.ok) setPrefs(normalizePreferences(await prefsRes.json()));
-                else if (prefsRes.status === 401) onNavigate('login');
-
-                const clanRes = await fetch(`${API_URL}/api/clan/stats`, { headers });
-                const clanData = await clanRes.json();
-
-                if (clanRes.ok) {
-                    const normalizedClan = normalizeClanStats(clanData);
-                    setClanStats(normalizedClan);
-                    setClanMembers(normalizedClan.members.map((m) => normalizeClanMember(m, normalizedClan.isWarDay)));
-                    setWarAttendance(normalizedClan.warAttendance);
-                } else {
-                    setClanStats({
-                        name: 'Clã não encontrado',
-                        tag: 'Verifique o .env',
-                        warDay: '?',
-                        medals: 0,
-                        pendingAttacks: 0,
-                        membersParticipating: 0,
-                        totalMembers: 0,
-                        isWarDay: false,
-                        missedDecksToday: [],
-                        warAttendance: [],
-                        members: []
-                    });
-                    setWarAttendance([]);
-                }
-
-                const historyRes = await fetch(`${API_URL}/api/clan/history`, { headers });
-                if (historyRes.ok) {
-                    setWarHistory(normalizeWarHistory(await historyRes.json()));
-                }
-
-                // Lógica de Notificações Baseada no Dia
-                const today = new Date();
-                const dayIdx = today.getDay(); // 0-Sun, 4-Thu
-                const dayNames = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
-                const isWarDay = dayIdx === 0 || dayIdx >= 4;
-
-                const newNotifs = [];
-                if (isWarDay) {
-                    newNotifs.push({
-                        id: 101,
-                        text: `Guerra em andamento! Hoje é ${dayNames[dayIdx]}.`,
-                        time: 'Status: ATIVO',
-                        icon: Swords,
-                        read: false
-                    });
-                    newNotifs.push({
-                        id: 102,
-                        text: 'Lembre-se: use todos os 4 decks diários!',
-                        time: 'Prioridade Alta',
-                        icon: BellRing,
-                        read: false
-                    });
-                    if (clanData.endOfDayAlert) {
-                        newNotifs.push({
-                            id: 104,
-                            text: `${clanData.pendingAttacks} membro(s) ainda estão com decks pendentes no fechamento do dia.`,
-                            time: 'Fechamento do dia',
-                            icon: ShieldAlert,
-                            read: false
-                        });
-                    }
-                } else {
-                    newNotifs.push({
-                        id: 103,
-                        text: `Próxima guerra começa na Quinta-feira. Hoje é ${dayNames[dayIdx]}.`,
-                        time: 'Status: TREINO',
-                        icon: Info,
-                        read: false
-                    });
-                }
-                setNotificationsList(newNotifs);
-
-            } catch (err) {
-                console.error("Erro ao conectar com o backend:", err);
+            if (clanRes.ok) {
+                const normalizedClan = normalizeClanStats(clanData);
+                setClanStats(normalizedClan);
+                setClanMembers(normalizedClan.members.map((member) => normalizeMemberWarData(member)));
+                setWarAttendance(normalizedClan.warAttendance);
+            } else {
+                setClanStats({
+                    name: 'Clã não encontrado',
+                    tag: 'Verifique o .env',
+                    war: {},
+                    today: {},
+                    fame: 0,
+                    pendingAttacks: 0,
+                    membersParticipating: 0,
+                    totalMembers: 0,
+                    isWarDay: false,
+                    missedDecksToday: [],
+                    warAttendance: [],
+                    members: []
+                });
+                setWarAttendance([]);
             }
-        };
-        fetchData();
-    }, []);
+
+            const historyRes = await fetch(`${API_URL}/api/clan/history`, { headers });
+            if (historyRes.ok) {
+                setWarHistory(normalizeWarHistory(await historyRes.json()));
+            }
+
+            const war = clanData.war || {};
+            const newNotifs = [];
+            if (war.isWarDay) {
+                newNotifs.push({
+                    id: 101,
+                    text: `${war.label || 'Guerra atual'} · Dia ${war.day || '-'}/4.`,
+                    time: war.periodType === 'colosseum' ? 'Coliseu' : 'Dia de guerra',
+                    icon: Swords,
+                    read: false
+                });
+                newNotifs.push({
+                    id: 102,
+                    text: 'Cada guerreiro precisa dos 4 ataques de hoje.',
+                    time: 'Prioridade alta',
+                    icon: BellRing,
+                    read: false
+                });
+                if (clanData.endOfDayAlert) {
+                    newNotifs.push({
+                        id: 104,
+                        text: `${clanData.pendingAttacks} membro(s) ainda estão com ataques de hoje pendentes.`,
+                        time: 'Fechamento do dia',
+                        icon: ShieldAlert,
+                        read: false
+                    });
+                }
+            } else if (war.isTraining) {
+                newNotifs.push({
+                    id: 103,
+                    text: `${war.label || 'Corrida atual'} está em treino. Os 4 ataques ainda não valem para a guerra.`,
+                    time: 'Treino',
+                    icon: Info,
+                    read: false
+                });
+            } else {
+                newNotifs.push({
+                    id: 103,
+                    text: 'A API não retornou uma corrida ativa no momento.',
+                    time: 'Sem corrida',
+                    icon: Info,
+                    read: false
+                });
+            }
+            setNotificationsList(newNotifs);
+
+        } catch (err) {
+            console.error("Erro ao conectar com o backend:", err);
+        }
+    }, [onNavigate]);
+
+    React.useEffect(() => {
+        const requestId = window.setTimeout(() => {
+            fetchData();
+        }, 0);
+
+        return () => window.clearTimeout(requestId);
+    }, [fetchData]);
 
     const handleSaveAttendance = async () => {
         if (!selectedMember) return;
@@ -412,9 +341,9 @@ export default function Dashboard({ onNavigate }) {
                 method: 'POST',
                 headers,
                 body: JSON.stringify({
-                    memberTag: selectedMember.id,
+                    memberTag: selectedMember.tag || selectedMember.id,
                     memberName: selectedMember.name,
-                    decksUsed: selectedMember.decksUsedCount,
+                    decksUsed: selectedMember.today?.decksUsed ?? selectedMember.decksUsedToday ?? 0,
                     justification: attendanceJustification
                 })
             });
@@ -423,6 +352,7 @@ export default function Dashboard({ onNavigate }) {
                 const data = await res.json();
                 setWarAttendance(Array.isArray(data.warAttendance) ? data.warAttendance : []);
                 setAttendanceJustification('');
+                await fetchData();
                 alert('Justificativa registrada com sucesso.');
             } else {
                 const errorData = await res.json().catch(() => ({}));
@@ -504,7 +434,7 @@ export default function Dashboard({ onNavigate }) {
     };
 
     const stats = [
-        { label: 'Medalhas do Clã', value: clanStats.medals.toLocaleString(), icon: Trophy, color: 'text-amber-500', bg: 'bg-amber-100', border: 'border-amber-200' },
+        { label: 'Fama do Clã', value: clanStats.fame.toLocaleString(), icon: Trophy, color: 'text-amber-500', bg: 'bg-amber-100', border: 'border-amber-200' },
         { label: 'Ataques Pendentes', value: clanStats.isWarDay ? `${clanStats.pendingAttacks}` : 'OFF', icon: Swords, color: 'text-red-500', bg: 'bg-red-100', border: 'border-red-200' },
         { label: 'Membros Participando', value: `${clanStats.membersParticipating}/${clanStats.totalMembers || 50}`, icon: Users, color: 'text-blue-500', bg: 'bg-blue-100', border: 'border-blue-200' },
     ];
@@ -514,88 +444,32 @@ export default function Dashboard({ onNavigate }) {
         { id: 'ranking', label: 'Ranking' },
         { id: 'membros', label: 'Membros' },
         { id: 'historico', label: 'Histórico' },
-        { id: 'heatmap', label: 'Heatmap' },
-        { id: 'analise', label: 'Análise' },
+        { id: 'advertencias', label: 'Advertências' },
         { id: 'relatorios', label: 'Relatórios' },
-        { id: 'tv', label: 'TV' },
         { id: 'perfil', label: 'Perfil' },
         { id: 'configs', label: 'Config.' },
     ];
 
     const rankingMembers = [...clanMembers]
-        .sort((a, b) => b.medals - a.medals || b.trophies - a.trophies)
+        .sort((a, b) => (b.fame || 0) - (a.fame || 0) || b.trophies - a.trophies)
+        .slice(0, 5);
+
+    const participationRanking = [...warHistory.members]
+        .filter((member) => clanMembers.some((currentMember) => currentMember.tag === member.tag))
+        .sort((a, b) => (b.participation || 0) - (a.participation || 0) || b.total - a.total)
         .slice(0, 5);
 
     const historicalMembers = warHistory.members
-        .filter((member) => clanMembers.some((currentMember) => currentMember.id === member.tag))
+        .filter((member) => clanMembers.some((currentMember) => currentMember.tag === member.tag || currentMember.id === member.tag))
         .filter((member) =>
             member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             member.tag.toLowerCase().includes(searchTerm.toLowerCase())
         );
 
-    const heatmapGrid = Array.from({ length: 35 }, (_, index) => {
-        const level = (index * 7 + (clanStats.medals % 5)) % 5;
-        return level;
-    });
-
-    const insightCards = [
-        {
-            label: 'Ataques restantes',
-            value: clanStats.pendingAttacks,
-            hint: clanStats.isWarDay ? 'Janela de guerra ativa' : 'Modo treino',
-            color: 'text-red-400'
-        },
-        {
-            label: 'Membros ativos',
-            value: `${clanStats.membersParticipating}/${clanStats.totalMembers || 50}`,
-            hint: 'Participação consolidada',
-            color: 'text-blue-300'
-        },
-        {
-            label: 'Medalhas totais',
-            value: clanStats.medals.toLocaleString(),
-            hint: 'Meta semanal monitorada',
-            color: 'text-amber-400'
-        },
-        {
-            label: 'Risco de inatividade',
-            value: 'Baixo',
-            hint: 'Baseada nos últimos ciclos',
-            color: 'text-emerald-400'
-        }
-    ];
-
     const reportMetrics = [
         { label: 'Top 5', value: rankingMembers.length },
         { label: 'Histórico', value: historicalMembers.length },
         { label: 'Alertas', value: notificationsList.filter((item) => !item.read).length },
-    ];
-
-    const shellMetrics = [
-        {
-            label: 'Ataques pendentes',
-            value: clanStats.isWarDay ? clanStats.pendingAttacks : 0,
-            hint: clanStats.isWarDay ? 'Ativo no ciclo atual' : 'Fora da janela de guerra',
-            accent: 'from-red-500/20 to-red-500/5 text-red-300'
-        },
-        {
-            label: 'Medalhas do clã',
-            value: clanStats.medals.toLocaleString(),
-            hint: 'Meta acompanhada semanalmente',
-            accent: 'from-amber-500/20 to-amber-500/5 text-amber-300'
-        },
-        {
-            label: 'Membros ativos',
-            value: `${clanStats.membersParticipating}/${clanStats.totalMembers || 50}`,
-            hint: 'Participação consolidada',
-            accent: 'from-blue-500/20 to-blue-500/5 text-blue-300'
-        },
-        {
-            label: 'Risco de inatividade',
-            value: 'Baixo',
-            hint: 'Monitorado por atividade recente',
-            accent: 'from-emerald-500/20 to-emerald-500/5 text-emerald-300'
-        }
     ];
 
     return (
@@ -619,30 +493,21 @@ export default function Dashboard({ onNavigate }) {
                     </div>
 
                     <nav className="flex-1 px-4 py-5 space-y-2 overflow-y-auto">
-                        <button
-                            onClick={() => handleTabChange('guerra')}
-                            className={`flex items-center gap-3 px-4 py-3 w-full rounded-xl font-bold transition-all ${activeTab === 'guerra' ? 'bg-blue-600/20 text-blue-400 border border-blue-600/30' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
-                        >
-                            <Ship className="h-5 w-5" /> Guerra Atual
-                        </button>
-                        <button
-                            onClick={() => handleTabChange('membros')}
-                            className={`flex items-center gap-3 px-4 py-3 w-full rounded-xl font-bold transition-all ${activeTab === 'membros' ? 'bg-blue-600/20 text-blue-400 border border-blue-600/30' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
-                        >
-                            <Users className="h-5 w-5" /> Membros
-                        </button>
-                        <button
-                            onClick={() => handleTabChange('historico')}
-                            className={`flex items-center gap-3 px-4 py-3 w-full rounded-xl font-bold transition-all ${activeTab === 'historico' ? 'bg-blue-600/20 text-blue-400 border border-blue-600/30' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
-                        >
-                            <History className="h-5 w-5" /> Histórico
-                        </button>
-                        <button
-                            onClick={() => handleTabChange('configs')}
-                            className={`flex items-center gap-3 px-4 py-3 w-full rounded-xl font-bold transition-all ${activeTab === 'configs' ? 'bg-blue-600/20 text-blue-400 border border-blue-600/30' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
-                        >
-                            <ShieldAlert className="h-5 w-5" /> Configurações
-                        </button>
+                        {navigationTabs.map((tab) => (
+                            <button
+                                key={tab.id}
+                                onClick={() => handleTabChange(tab.id)}
+                                className={`flex items-center gap-3 px-4 py-3 w-full rounded-xl font-bold transition-all ${activeTab === tab.id ? 'bg-blue-600/20 text-blue-400 border border-blue-600/30' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+                            >
+                                {tab.id === 'guerra' && <Ship className="h-5 w-5" />}
+                                {tab.id === 'membros' && <Users className="h-5 w-5" />}
+                                {tab.id === 'historico' && <History className="h-5 w-5" />}
+                                {tab.id === 'advertencias' && <ShieldAlert className="h-5 w-5" />}
+                                {tab.id === 'configs' && <Settings className="h-5 w-5" />}
+                                {!['guerra', 'membros', 'historico', 'advertencias', 'configs'].includes(tab.id) && <FileText className="h-5 w-5" />}
+                                {tab.label}
+                            </button>
+                        ))}
                     </nav>
 
                     <div className="p-4 bg-[#09101C] border-t border-white/6">
@@ -772,95 +637,21 @@ export default function Dashboard({ onNavigate }) {
                 <div className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 bg-[#070B14]">
                     <div className="mx-auto max-w-7xl space-y-6">
 
-                        <section className="wt-surface rounded-[1.5rem] p-2.5 sm:p-3">
-                            <div className="flex flex-wrap gap-2">
-                                {navigationTabs.map((tab) => (
-                                    <button
-                                        key={tab.id}
-                                        onClick={() => handleTabChange(tab.id)}
-                                        className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${activeTab === tab.id
-                                            ? 'bg-white/8 text-white border border-white/10 shadow-[0_10px_24px_rgba(0,0,0,0.22)]'
-                                            : 'border border-white/6 bg-transparent text-slate-400 hover:bg-white/5 hover:text-white'
-                                            }`}
-                                    >
-                                        {tab.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </section>
-
-                        <section className="wt-surface wt-border-glow overflow-hidden rounded-[1.75rem]">
-                            <div className="grid gap-5 p-5 xl:grid-cols-[1.25fr_0.75fr] xl:p-6">
-                                <div className="space-y-5">
-                                    <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-300">
-                                        <Sparkles className="h-4 w-4 text-[#F5B100]" /> {activeView.kicker}
-                                    </div>
-                                    <div>
-                                        <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl">
-                                            {activeView.title} <span className="wt-text-gradient">{clanStats.name}</span>
-                                        </h1>
-                                        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400 sm:text-[15px]">
-                                            {activeView.description}
-                                        </p>
-                                    </div>
-
-                                    <div className="flex flex-wrap gap-2">
-                                        <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-300">
-                                            {activeView.badge}
-                                        </span>
-                                        {activeView.highlights.map((item) => (
-                                            <span key={item} className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                                                {item}
-                                            </span>
-                                        ))}
-                                    </div>
-
-                                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                                        {shellMetrics.map((metric) => (
-                                            <div key={metric.label} className="rounded-2xl border border-white/6 bg-[#0B1220] p-4">
-                                                <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-400">{metric.label}</p>
-                                                <p className="mt-2 text-3xl font-black text-white">{metric.value}</p>
-                                                <p className="mt-2 text-xs font-medium text-slate-400">{metric.hint}</p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div className="rounded-[1.5rem] border border-white/6 bg-[#0B1220] p-5">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500">{activeView.badge}</p>
-                                            <h2 className="mt-2 text-xl font-black text-white">{activeView.title}</h2>
-                                        </div>
-                                        <div className="rounded-2xl bg-white/5 p-3 text-slate-300 border border-white/6">
-                                            <Trophy className="h-5 w-5" />
-                                        </div>
-                                    </div>
-
-                                    <div className="mt-5 space-y-4">
-                                        {insightCards.map((item) => (
-                                            <div key={item.label} className="rounded-2xl border border-white/6 bg-white/4 p-4">
-                                                <div className="flex items-center justify-between gap-3">
-                                                    <div>
-                                                        <p className="text-xs font-bold uppercase tracking-[0.25em] text-slate-500">{item.label}</p>
-                                                        <p className={`mt-2 text-2xl font-black ${item.color}`}>{item.value}</p>
-                                                    </div>
-                                                    <div className="h-2.5 w-2.5 rounded-full bg-[#5B5FFF]"></div>
-                                                </div>
-                                                <p className="mt-2 text-xs text-slate-500">{item.hint}</p>
-                                            </div>
-                                        ))}
-                                            <div className="rounded-2xl border border-white/6 bg-white/4 p-4">
-                                                <p className="text-[10px] font-black uppercase tracking-[0.28em] text-slate-500">O que você abriu</p>
-                                                <p className="mt-2 text-sm font-semibold text-slate-200">{activeView.description}</p>
-                                            </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
-
                         {activeTab === 'guerra' && (
-                            <div ref={registerSectionRef('guerra')} className="space-y-8 animate-in fade-in duration-500">
+                            <WarDashboard
+                                clanStats={clanStats}
+                                members={clanMembers}
+                                onSelectMember={(member) => {
+                                    setSelectedMember(member);
+                                    const latestAttendance = warAttendance.find((entry) => entry.memberTag === member.id);
+                                    setAttendanceJustification(latestAttendance?.justification || '');
+                                    setShowMemberModal(true);
+                                }}
+                            />
+                        )}
+
+                        {activeTab === 'legacy-guerra' && (
+                            <div className="space-y-8 animate-in fade-in duration-500">
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                                     {stats.map((stat, idx) => (
                                         <div key={idx} className={`wt-surface wt-hover-lift rounded-[1.25rem] p-4 flex items-center gap-4`}>
@@ -911,7 +702,7 @@ export default function Dashboard({ onNavigate }) {
                                                         </td>
                                                         <td className="px-6 py-4 text-center">
                                                             <div className="inline-flex items-center gap-1 font-black text-amber-500 text-base">
-                                                                <Trophy className="h-4 w-4" /> {member.medals}
+                                                                <Trophy className="h-4 w-4" /> {member.fame}
                                                             </div>
                                                         </td>
                                                         <td className="px-6 py-4 text-center">
@@ -942,11 +733,11 @@ export default function Dashboard({ onNavigate }) {
                         )}
 
                         {activeTab === 'ranking' && (
-                            <div ref={registerSectionRef('ranking')} className="animate-in fade-in duration-500 space-y-6">
+                            <div className="animate-in fade-in duration-500 space-y-6">
                                 <div className="flex items-end justify-between gap-4">
                                     <div>
                                         <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#7C3AED]">Ranking do clã</p>
-                                        <h2 className="mt-2 text-3xl font-black text-white">Top guerreiro e consistência semanal</h2>
+                                        <h2 className="mt-2 text-3xl font-black text-white">Fama da guerra atual</h2>
                                     </div>
                                     <div className="rounded-full border border-white/6 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-[0.24em] text-slate-300">
                                         Atualizado agora
@@ -967,8 +758,8 @@ export default function Dashboard({ onNavigate }) {
                                                         <p className="text-xs text-slate-500">{member.role}</p>
                                                     </div>
                                                     <div className="text-right">
-                                                        <p className="text-sm font-black text-amber-400">{member.medals.toLocaleString()}</p>
-                                                        <p className="text-[10px] uppercase tracking-[0.22em] text-slate-500">medalhas</p>
+                                                        <p className="text-sm font-black text-amber-400">{(member.fame || 0).toLocaleString()}</p>
+                                                        <p className="text-[10px] uppercase tracking-[0.22em] text-slate-500">fama</p>
                                                     </div>
                                                 </div>
                                             ))}
@@ -977,92 +768,34 @@ export default function Dashboard({ onNavigate }) {
 
                                     <div className="wt-surface rounded-[1.5rem] p-5">
                                         <div className="flex items-center justify-between">
-                                            <h3 className="text-base font-semibold text-white tracking-[0.08em]">Comparação de guerra</h3>
+                                            <h3 className="text-base font-semibold text-white tracking-[0.08em]">Participação nas últimas guerras</h3>
                                             <TrendingUp className="h-5 w-5 text-emerald-400" />
                                         </div>
                                         <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                                            {rankingMembers.map((member) => (
-                                                <div key={member.id} className="rounded-2xl border border-white/6 bg-[#0B1220] p-4">
+                                            {participationRanking.length > 0 ? participationRanking.map((member) => (
+                                                <div key={member.tag} className="rounded-2xl border border-white/6 bg-[#0B1220] p-4">
                                                     <div className="flex items-center justify-between gap-3">
                                                         <div>
                                                             <p className="text-sm font-bold text-white">{member.name}</p>
-                                                            <p className="text-xs text-slate-500">{member.decksUsed} decks usados</p>
+                                                            <p className="text-xs text-slate-500">{member.attacksUsed}/{member.attacksPossible} ataques</p>
                                                         </div>
-                                                        <span className="rounded-full bg-white/5 px-3 py-1 text-xs font-bold text-slate-300">#{member.id}</span>
+                                                        <span className="rounded-full bg-white/5 px-3 py-1 text-xs font-bold text-slate-300">{member.participation}%</span>
                                                     </div>
                                                     <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/5">
-                                                        <div className="h-full rounded-full bg-gradient-to-r from-[#5B5FFF] to-[#F5B100]" style={{ width: `${Math.max(35, Math.min(100, member.medals / 50))}%` }}></div>
+                                                        <div className="h-full rounded-full bg-amber-400" style={{ width: `${Math.max(0, Math.min(100, member.participation || 0))}%` }}></div>
                                                     </div>
                                                 </div>
-                                            ))}
+                                            )) : (
+                                                <p className="text-sm text-slate-500">Sem dados suficientes no histórico para calcular participação.</p>
+                                            )}
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {activeTab === 'heatmap' && (
-                            <div ref={registerSectionRef('heatmap')} className="animate-in fade-in duration-500 grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-                                <div className="wt-surface rounded-[1.5rem] p-5">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#8FA2FF]">Heatmap de atividade</p>
-                                            <h2 className="mt-2 text-2xl font-black text-white">Últimos 35 dias</h2>
-                                        </div>
-                                        <Activity className="h-6 w-6 text-emerald-400" />
-                                    </div>
-                                    <div className="mt-6 grid grid-cols-7 gap-2 sm:gap-3">
-                                        {heatmapGrid.map((level, index) => (
-                                            <div
-                                                key={index}
-                                                className={`aspect-square rounded-lg border border-white/5 ${
-                                                    level === 0 ? 'bg-white/5' : level === 1 ? 'bg-[#1E2A44]' : level === 2 ? 'bg-[#2D3D66]' : level === 3 ? 'bg-[#5B5FFF]' : 'bg-[#F5B100]'
-                                                }`}
-                                            ></div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div className="wt-surface rounded-[1.5rem] p-5 space-y-4">
-                                    <h3 className="text-base font-semibold text-white tracking-[0.08em]">Leitura rápida</h3>
-                                    {[
-                                        { label: 'Dias mais fortes', value: 'Quinta a Domingo' },
-                                        { label: 'Queda de atividade', value: 'Segunda e Terça' },
-                                        { label: 'Alertas', value: '2 membros com risco médio' },
-                                    ].map((item) => (
-                                        <div key={item.label} className="rounded-2xl border border-white/6 bg-white/4 p-4">
-                                            <p className="text-xs font-bold uppercase tracking-[0.22em] text-slate-500">{item.label}</p>
-                                            <p className="mt-2 text-lg font-black text-white">{item.value}</p>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {activeTab === 'analise' && (
-                            <div ref={registerSectionRef('analise')} className="animate-in fade-in duration-500 space-y-6">
-                                <div className="flex items-end justify-between gap-4">
-                                    <div>
-                                        <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#F5B100]">Análise inteligente</p>
-                                        <h2 className="mt-2 text-3xl font-black text-white">Insights táticos para liderança</h2>
-                                    </div>
-                                    <Radar className="h-6 w-6 text-amber-400" />
-                                </div>
-
-                                <div className="grid gap-4 md:grid-cols-3">
-                                    {insightCards.map((item) => (
-                                        <div key={item.label} className="wt-surface rounded-[1.25rem] p-5">
-                                            <p className="text-xs font-bold uppercase tracking-[0.25em] text-slate-500">{item.label}</p>
-                                            <p className={`mt-3 text-3xl font-black ${item.color}`}>{item.value}</p>
-                                            <p className="mt-3 text-sm text-slate-400">{item.hint}</p>
-                                        </div>
-                                    ))}
                                 </div>
                             </div>
                         )}
 
                         {activeTab === 'relatorios' && (
-                            <div ref={registerSectionRef('relatorios')} className="animate-in fade-in duration-500 space-y-6">
+                            <div className="animate-in fade-in duration-500 space-y-6">
                                 <div className="flex items-end justify-between gap-4">
                                     <div>
                                         <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#22C55E]">Relatórios</p>
@@ -1086,7 +819,7 @@ export default function Dashboard({ onNavigate }) {
                                             {historicalMembers.slice(0, 4).map((member) => (
                                                 <div key={member.tag} className="flex items-center justify-between rounded-2xl border border-white/6 bg-white/4 px-4 py-3">
                                                     <span className="text-sm font-bold text-white">{member.name}</span>
-                                                    <span className="text-sm text-slate-400">{member.total.toLocaleString()} medalhas</span>
+                                                    <span className="text-sm text-slate-400">{member.total.toLocaleString()} fama</span>
                                                 </div>
                                             ))}
                                         </div>
@@ -1095,30 +828,8 @@ export default function Dashboard({ onNavigate }) {
                             </div>
                         )}
 
-                        {activeTab === 'tv' && (
-                            <div ref={registerSectionRef('tv')} className="animate-in fade-in duration-500">
-                                <div className="wt-surface overflow-hidden rounded-[1.75rem]">
-                                    <div className="flex items-center justify-between border-b border-white/6 px-6 py-4">
-                                        <div>
-                                            <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500">Modo TV</p>
-                                            <h2 className="mt-1 text-2xl font-black text-white">Painel ao vivo</h2>
-                                        </div>
-                                        <Monitor className="h-6 w-6 text-[#5B5FFF]" />
-                                    </div>
-                                    <div className="grid gap-4 p-6 lg:grid-cols-2 xl:grid-cols-4">
-                                        {shellMetrics.map((metric) => (
-                                            <div key={metric.label} className="rounded-2xl border border-white/6 bg-[#0B1220] p-4 text-center">
-                                                <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500">{metric.label}</p>
-                                                <p className="mt-3 text-4xl font-black text-white">{metric.value}</p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
                         {activeTab === 'perfil' && (
-                            <div ref={registerSectionRef('perfil')} className="animate-in slide-in-from-right-4 duration-500 max-w-2xl mx-auto">
+                            <div className="animate-in slide-in-from-right-4 duration-500 max-w-2xl mx-auto">
                                 <div className="flex items-center gap-4 mb-6">
                                     <div className="w-16 h-16 bg-white/5 text-white rounded-2xl flex items-center justify-center border border-white/6">
                                         <User className="h-8 w-8" />
@@ -1193,7 +904,7 @@ export default function Dashboard({ onNavigate }) {
                         )}
 
                         {activeTab === 'preferencias' && (
-                            <div ref={registerSectionRef('preferencias')} className="animate-in slide-in-from-right-4 duration-500 max-w-2xl mx-auto">
+                            <div className="animate-in slide-in-from-right-4 duration-500 max-w-2xl mx-auto">
                                 <div className="flex items-center gap-4 mb-6">
                                     <div className="w-16 h-16 bg-white/5 text-white rounded-2xl flex items-center justify-center border border-white/6">
                                         <Settings className="h-8 w-8" />
@@ -1269,7 +980,7 @@ export default function Dashboard({ onNavigate }) {
                         )}
 
                         {activeTab === 'membros' && (
-                            <div ref={registerSectionRef('membros')} className="animate-in slide-in-from-bottom-4 duration-500 space-y-6">
+                            <div className="animate-in slide-in-from-bottom-4 duration-500 space-y-6">
                                 <div className="flex justify-between items-center">
                                     <h1 className="text-3xl font-black text-white tracking-tight">Gestão de Membros</h1>
                                     <span className="bg-white/5 text-blue-200 px-4 py-2 rounded-xl text-xs font-black uppercase border border-white/6">
@@ -1351,7 +1062,7 @@ export default function Dashboard({ onNavigate }) {
                         )}
 
                         {activeTab === 'historico' && (
-                            <div ref={registerSectionRef('historico')} className="animate-in slide-in-from-bottom-4 duration-500 space-y-6">
+                            <div className="animate-in slide-in-from-bottom-4 duration-500 space-y-6">
                                 <div className="flex justify-between items-center">
                                     <h1 className="text-3xl font-black text-white tracking-tight">Histórico de Guerras</h1>
                                     <div className="flex gap-2 no-print">
@@ -1388,7 +1099,7 @@ export default function Dashboard({ onNavigate }) {
                                             <tbody className="divide-y divide-white/6">
                                                 {warHistory.members.length > 0 ? (
                                                     warHistory.members
-                                                        .filter(member => clanMembers.some(currentMember => currentMember.id === member.tag))
+                                                        .filter(member => clanMembers.some(currentMember => currentMember.tag === member.tag || currentMember.id === member.tag))
                                                         .filter(m =>
                                                             m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                                             m.tag.toLowerCase().includes(searchTerm.toLowerCase())
@@ -1449,8 +1160,19 @@ export default function Dashboard({ onNavigate }) {
                             </div>
                         )}
 
+                        {activeTab === 'advertencias' && (
+                            <div className="animate-in slide-in-from-bottom-4 duration-500 space-y-6">
+                                <div>
+                                    <p className="text-xs font-bold uppercase tracking-[0.3em] text-amber-300">Acompanhamento disciplinar</p>
+                                    <h1 className="mt-2 text-3xl font-black text-white tracking-tight">Advertências</h1>
+                                    <p className="mt-2 text-sm text-slate-400">Só entram registros feitos pela liderança. Ausência na lista de participantes da API não gera advertência sozinha.</p>
+                                </div>
+                                <WarningsTable attendance={warAttendance} members={clanMembers} />
+                            </div>
+                        )}
+
                         {activeTab === 'configs' && (
-                            <div ref={registerSectionRef('configs')} className="animate-in slide-in-from-bottom-4 duration-500 space-y-8">
+                            <div className="animate-in slide-in-from-bottom-4 duration-500 space-y-8">
                                 <div className="flex items-center gap-4 mb-2">
                                     <div className="w-16 h-16 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-200">
                                         <Settings className="h-8 w-8" />
@@ -1486,7 +1208,7 @@ export default function Dashboard({ onNavigate }) {
                                             </div>
 
                                             <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.24em]">Meta de Medalhas (Mínimo)</label>
+                                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.24em]">Meta de Fama (Mínimo)</label>
                                                 <div className="flex items-center gap-4">
                                                     <input
                                                         type="range"
@@ -1513,41 +1235,27 @@ export default function Dashboard({ onNavigate }) {
 
                                         <div className="space-y-4">
                                             <div className="p-4 bg-white/5 rounded-2xl border border-white/6 flex items-center justify-between">
-                                                <span className="font-bold text-white">Status de Hoje</span>
-                                                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${new Date().getDay() === 0 || new Date().getDay() >= 4 ? 'bg-amber-400 text-slate-950' : 'bg-white/10 text-slate-400'}`}>
-                                                    {new Date().getDay() === 0 || new Date().getDay() >= 4 ? 'EM GUERRA' : 'DESCANSO'}
+                                                <span className="font-bold text-white">Status da API</span>
+                                                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${clanStats.isWarDay ? 'bg-amber-400 text-slate-950' : 'bg-white/10 text-slate-400'}`}>
+                                                    {clanStats.war?.periodType === 'colosseum' ? 'COLISEU' : (clanStats.isWarDay ? 'DIA DE GUERRA' : (clanStats.war?.isTraining ? 'TREINO' : 'SEM CORRIDA'))}
                                                 </span>
                                             </div>
 
                                             <div className="bg-white/4 p-5 rounded-2xl space-y-3 border border-white/6">
                                                 <div className="flex justify-between items-center text-xs font-bold">
-                                                    <span className="text-slate-500 uppercase tracking-[0.18em]">Período Ativo</span>
-                                                    <span className="text-white">Quinta a Domingo</span>
+                                                    <span className="text-slate-500 uppercase tracking-[0.18em]">Corrida</span>
+                                                    <span className="text-white">{clanStats.war?.label || '—'}</span>
                                                 </div>
-                                                <div className="grid grid-cols-7 gap-1">
-                                                    {['S', 'T', 'Q', 'Q', 'S', 'S', 'D'].map((d, i) => (
-                                                        <div key={i} className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-black ${i === 0 || i >= 4 ? 'bg-amber-400 text-slate-950' : 'bg-white/8 text-slate-500'}`}>
-                                                            {d}
-                                                        </div>
-                                                    ))}
-                                                </div>
+                                                <p className="text-sm text-slate-400">
+                                                    {clanStats.isWarDay
+                                                        ? `Dia ${clanStats.war?.day || '-'}/4 segundo periodIndex da River Race.`
+                                                        : 'O dia da guerra não é inferido pelo calendário (quinta a domingo).'}
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="rounded-3xl p-6 text-white relative overflow-hidden group border border-white/6 bg-[#0B1220]">
-                                    <div className="relative z-10 flex flex-col sm:flex-row justify-between items-center gap-6">
-                                        <div>
-                                            <h3 className="text-xl font-black uppercase mb-2 tracking-[0.08em]">Relatórios de Inatividade</h3>
-                                            <p className="text-slate-400 font-medium max-w-md">Envie automaticamente mensagens para quem não atacou nas últimas 24h.</p>
-                                        </div>
-                                        <button className="bg-white text-slate-950 hover:bg-slate-200 px-6 py-3 rounded-2xl font-black uppercase tracking-[0.2em] transition-all active:scale-95 whitespace-nowrap">
-                                            Configurar Bot
-                                        </button>
-                                    </div>
-                                    <Crown className="absolute -right-8 -bottom-8 h-48 w-48 text-white/4 rotate-12 group-hover:rotate-0 transition-transform duration-700" />
-                                </div>
                             </div>
                         )}
 
@@ -1571,7 +1279,7 @@ export default function Dashboard({ onNavigate }) {
                 ></div>
             )}
             {/* Modal de Perfil do Membro */}
-            {showMemberModal && selectedMember && (
+            {showMemberModal && selectedMember && activeTab === 'legacy-guerra' && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                     <div
                         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
@@ -1607,10 +1315,10 @@ export default function Dashboard({ onNavigate }) {
                                     <p className="text-2xl font-black text-white">{selectedMember.decksUsed}</p>
                                 </div>
                                 <div className="p-5 bg-white/4 rounded-2xl border border-white/6 text-center">
-                                    <p className="text-xs font-black text-slate-500 uppercase mb-2 tracking-[0.2em]">Medalhas</p>
+                                    <p className="text-xs font-black text-slate-500 uppercase mb-2 tracking-[0.2em]">Fama</p>
                                     <div className="flex items-center justify-center gap-1">
                                         <Trophy className="h-5 w-5 text-amber-500" />
-                                        <p className="text-2xl font-black text-white">{selectedMember.medals}</p>
+                                        <p className="text-2xl font-black text-white">{selectedMember.fame}</p>
                                     </div>
                                 </div>
                             </div>
@@ -1625,7 +1333,7 @@ export default function Dashboard({ onNavigate }) {
                                 <div className="h-3 w-full bg-white/8 rounded-full mt-3 overflow-hidden">
                                     <div
                                         className={`h-full transition-all duration-1000 ${selectedMember.status === 'Concluído' ? 'bg-green-500' : 'bg-amber-500'}`}
-                                        style={{ width: `${(parseInt(selectedMember.decksUsed) / 4) * 100}%` }}
+                                        style={{ width: `${(Number(selectedMember.decksUsed) / 16) * 100}%` }}
                                     ></div>
                                 </div>
                             </div>
@@ -1717,6 +1425,19 @@ export default function Dashboard({ onNavigate }) {
                     </div>
                 </div>
             )}
+            <MemberDetailModal
+                member={showMemberModal ? selectedMember : null}
+                attendance={warAttendance}
+                history={warHistory.members}
+                justification={attendanceJustification}
+                onJustificationChange={setAttendanceJustification}
+                onSave={handleSaveAttendance}
+                onClose={() => {
+                    setShowMemberModal(false);
+                    setAttendanceJustification('');
+                }}
+                isSaving={isSavingAttendance}
+            />
         </div>
     );
 }
