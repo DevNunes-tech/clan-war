@@ -1,10 +1,17 @@
 const Clan = require('../models/Clan');
+const User = require('../models/User');
 const crApi = require('../utils/crApi');
 
 const normalizeTag = (tag) => String(tag || '')
     .trim()
     .replace(/["']/g, '')
     .toUpperCase();
+
+const normalizeConfiguredTag = (tag) => {
+    const normalized = normalizeTag(tag);
+    if (!normalized) return '';
+    return normalized.startsWith('#') ? normalized : `#${normalized}`;
+};
 
 const getDateKey = (date = new Date()) => date.toISOString().slice(0, 10);
 
@@ -13,6 +20,8 @@ const getDateLabel = (date = new Date()) => date.toLocaleDateString('pt-BR', {
     month: '2-digit',
     year: 'numeric'
 });
+
+const getConfiguredClanTag = () => normalizeConfiguredTag(process.env.CLAN_TAG);
 
 const ensureClanRecord = async ({ clanTag, clanName, medals, members }) => {
     const update = {
@@ -35,9 +44,12 @@ const ensureClanRecord = async ({ clanTag, clanName, medals, members }) => {
 };
 
 exports.getClanStats = async (req, res) => {
-    let clanTag = normalizeTag(req.query.tag || process.env.CLAN_TAG || '#L98JQV');
+    const clanTag = getConfiguredClanTag();
     console.log('Buscando dados para a Tag:', clanTag);
 
+    if (!clanTag) {
+        return res.status(500).json({ message: 'Tag do clã não está configurada no servidor.' });
+    }
 
     try {
         const clanRecord = await Clan.findOne({ tag: clanTag });
@@ -124,13 +136,15 @@ exports.getClanStats = async (req, res) => {
 };
 
 exports.saveWarAttendance = async (req, res) => {
-    const clanTag = normalizeTag(req.body.clanTag || req.query.tag || process.env.CLAN_TAG || '#L98JQV');
-    const clanName = String(req.body.clanName || '').trim();
+    const clanTag = getConfiguredClanTag();
     const memberTag = normalizeTag(req.body.memberTag);
     const memberName = String(req.body.memberName || '').trim();
     const justification = String(req.body.justification || '').trim();
     const decksUsed = Number(req.body.decksUsed);
-    const reportedBy = String(req.body.reportedBy || '').trim();
+
+    if (!clanTag) {
+        return res.status(500).json({ message: 'Tag do clã não está configurada no servidor.' });
+    }
 
     if (!memberTag || !memberName) {
         return res.status(400).json({ message: 'Tag e nome do membro são obrigatórios.' });
@@ -141,11 +155,21 @@ exports.saveWarAttendance = async (req, res) => {
     }
 
     try {
+        const reportingUser = await User.findById(req.user.id).select('name clanTag email');
+        if (!reportingUser) {
+            return res.status(401).json({ message: 'Usuário autenticado não encontrado.' });
+        }
+
+        const reportedBy = reportingUser.name
+            || reportingUser.clanTag
+            || reportingUser.email;
+        const existingClan = await Clan.findOne({ tag: clanTag });
+
         const clan = await ensureClanRecord({
             clanTag,
-            clanName: clanName || clanTag,
-            medals: 0,
-            members: []
+            clanName: existingClan?.name || clanTag,
+            medals: existingClan?.medals || 0,
+            members: existingClan?.members || []
         });
         if (!clan) {
             return res.status(404).json({ message: 'Clã não encontrado para registrar a justificativa.' });
@@ -194,8 +218,11 @@ exports.saveWarAttendance = async (req, res) => {
 };
 
 exports.getWarHistory = async (req, res) => {
-    let clanTag = normalizeTag(req.query.tag || process.env.CLAN_TAG || '#L98JQV');
+    const clanTag = getConfiguredClanTag();
 
+    if (!clanTag) {
+        return res.status(500).json({ message: 'Tag do clã não está configurada no servidor.' });
+    }
 
     try {
         const warLog = await crApi.getWarLog(clanTag);
@@ -262,4 +289,3 @@ exports.getWarHistory = async (req, res) => {
         res.status(500).json({ message: 'Erro ao buscar histórico', error: error.message });
     }
 };
-
