@@ -1,25 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import LandingPage from './components/LandingPage';
 import LoginPage from './components/LoginPage';
 import Dashboard from './components/Dashboard';
 
 export default function App() {
-  const [currentView, setCurrentView] = useState('loading');
-
-  useEffect(() => {
-   
-    const token = localStorage.getItem('token');
-    if (token) {
-      setCurrentView('dashboard');
-    } else {
-      setCurrentView('landing');
-    }
-  }, []);
+  const [currentView, setCurrentView] = useState(() => (
+    localStorage.getItem('token') ? 'dashboard' : 'landing'
+  ));
 
   const navigateTo = (view) => {
     if (view === 'landing' || view === 'login') {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+    }
+    if (view === 'dashboard' && !window.location.pathname.startsWith('/dashboard')) {
+      window.history.replaceState({}, '', '/dashboard/guerra');
     }
     setCurrentView(view);
   };

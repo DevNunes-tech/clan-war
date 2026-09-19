@@ -9,9 +9,9 @@ const featureCards = [
 ];
 
 const metrics = [
-    { label: 'Medalhas', value: '32.850', accent: 'text-amber-400' },
+    { label: 'Fama', value: '32.850', accent: 'text-amber-400' },
     { label: 'Ativos', value: '42/50', accent: 'text-blue-300' },
-    { label: 'Risco', value: 'Baixo', accent: 'text-emerald-400' },
+    { label: 'Ataques hoje', value: '4/4', accent: 'text-emerald-400' },
 ];
 
 export default function LandingPage({ onNavigate }) {
@@ -130,8 +130,8 @@ export default function LandingPage({ onNavigate }) {
                                         {[
                                             { label: 'Ataques pendentes', value: '8', color: 'text-red-400', icon: Swords },
                                             { label: 'Membros ativos', value: '42/50', color: 'text-blue-300', icon: Users },
-                                            { label: 'Medalhas do clã', value: '32.850', color: 'text-amber-400', icon: Trophy },
-                                            { label: 'Risco inatividade', value: 'Baixo', color: 'text-emerald-400', icon: Radar },
+                                            { label: 'Fama do clã', value: '32.850', color: 'text-amber-400', icon: Trophy },
+                                            { label: 'Ataques de hoje', value: '168/200', color: 'text-emerald-400', icon: Radar },
                                         ].map((item) => (
                                             <div key={item.label} className="rounded-2xl border border-white/6 bg-white/5 p-4">
                                                 <div className="mb-4 flex items-center justify-between">
