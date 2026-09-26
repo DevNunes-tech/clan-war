@@ -76,7 +76,14 @@ router.post('/login', validateEnvMiddleware, async (req, res) => {
     } catch (error) {
         console.error('Auth Error:', error.message);
         const status = error.response?.status || 500;
-        const message = status === 404 ? 'Jogador não encontrado na API do Clash Royale' : 'Erro na autenticação';
+        let message = 'Erro na autenticação';
+        if (status === 403) {
+            const apiMessage = String(error.response?.data?.message || '').toLowerCase();
+            message = apiMessage.includes('invalid authorization')
+                ? 'O proxy do Clash Royale recusou a chave da API. Confira CLASH_ROYALE_API_KEY nas variáveis do Render.'
+                : 'A API do Clash Royale recusou o acesso. Verifique a chave e se o IP de saída está autorizado.';
+        }
+        if (status === 404) message = 'Jogador não encontrado na API do Clash Royale';
         res.status(status).json({ success: false, message });
     }
 });
