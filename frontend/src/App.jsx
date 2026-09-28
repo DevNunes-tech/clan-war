@@ -1,12 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import LandingPage from './components/LandingPage';
 import LoginPage from './components/LoginPage';
 import Dashboard from './components/Dashboard';
+import { buildUrl } from './utils/api';
 
 export default function App() {
   const [currentView, setCurrentView] = useState(() => (
     localStorage.getItem('token') ? 'dashboard' : 'landing'
   ));
+
+  useEffect(() => {
+    // Pré-aquecimento preventivo do backend (acorda o Render se estiver em modo sleep)
+    fetch(buildUrl('/api/health')).catch(() => {});
+  }, []);
 
   const navigateTo = (view) => {
     if (view === 'landing' || view === 'login') {
