@@ -17,14 +17,24 @@ const normalizeBaseUrl = (value) => {
     }
 };
 
-const baseURL = normalizeBaseUrl(process.env.CLASH_ROYALE_BASE_URL);
+const cleanApiKey = (key) => {
+    let cleaned = String(key || '').trim();
+    if ((cleaned.startsWith('"') && cleaned.endsWith('"')) || (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
+        cleaned = cleaned.slice(1, -1).trim();
+    }
+    return cleaned;
+};
 
 const crApi = axios.create({
     baseURL,
-    timeout: 10000,
-    headers: {
-        'Authorization': `Bearer ${process.env.CLASH_ROYALE_API_KEY}`
-    }
+    timeout: 10000
+});
+
+crApi.interceptors.request.use((config) => {
+    const apiKey = cleanApiKey(process.env.CLASH_ROYALE_API_KEY);
+    config.headers = config.headers || {};
+    config.headers['Authorization'] = `Bearer ${apiKey}`;
+    return config;
 });
 
 const encodeTag = (tag) => {
