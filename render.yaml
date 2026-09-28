@@ -18,3 +18,13 @@ services:
         value: https://proxy.royaleapi.dev/v1
       - key: CLAN_TAG
         sync: false
+  - type: cron
+    name: wartracker-ping
+    env: node
+    schedule: "*/10 * * * *"
+    buildCommand: echo "No build required"
+    startCommand: >-
+      node -e "fetch('https://clan-war.onrender.com/api/ping', { method: 'GET' }).then(response => {
+      console.log('GET /api/ping: ' + response.status);
+      if (!response.ok) process.exitCode = 1;
+      }).catch(error => { console.error(error); process.exitCode = 1; })"
