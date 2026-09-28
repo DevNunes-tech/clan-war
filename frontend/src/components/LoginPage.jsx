@@ -14,7 +14,15 @@ export default function LoginPage({ onNavigate }) {
         setError('');
         setStatusMessage(`Consultando a tag ${playerTag.trim()} na API oficial...`);
         const controller = new AbortController();
-        const timeoutId = window.setTimeout(() => controller.abort(), 15000);
+        const timeoutId = window.setTimeout(() => controller.abort(), 60000);
+
+        const warmUpTimer1 = window.setTimeout(() => {
+            setStatusMessage('Conectando ao servidor na nuvem (inicializando instância)...');
+        }, 4000);
+
+        const warmUpTimer2 = window.setTimeout(() => {
+            setStatusMessage('O backend do Render está acordando do repouso (cold start), quase pronto...');
+        }, 14000);
 
         try {
             const response = await fetch(buildUrl('/api/auth/login'), {
@@ -38,10 +46,12 @@ export default function LoginPage({ onNavigate }) {
         } catch (err) {
             setStatusMessage('Não foi possível concluir a consulta.');
             setError(err.name === 'AbortError'
-                ? 'O servidor demorou para responder. Verifique o backend e tente novamente.'
+                ? 'O servidor demorou mais de 60s para responder. O Render pode estar reiniciando, tente novamente em instantes.'
                 : 'Erro ao conectar com o servidor. Tente novamente.');
         } finally {
             window.clearTimeout(timeoutId);
+            window.clearTimeout(warmUpTimer1);
+            window.clearTimeout(warmUpTimer2);
             setLoading(false);
         }
     };

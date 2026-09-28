@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const mongoose = require('mongoose');
 const connectDatabase = require('./config/database');
 const { ensureEnv } = require('./middleware/validateEnv');
 require('dotenv').config();
@@ -24,12 +25,19 @@ const allowedOrigins = [
     'https://www.brootherwood.com.br'
 ];
 
+const isAllowedOrigin = (origin) => {
+    if (!origin) return true;
+    if (allowedOrigins.includes(origin)) return true;
+    if (/^https:\/\/clan-war.*\.vercel\.app$/.test(origin)) return true;
+    return false;
+};
+
 app.use(cors({
     origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
+        if (isAllowedOrigin(origin)) {
             return callback(null, true);
         }
-        callback(new Error(`CORS policy: origin ${origin} is not allowed`));
+        return callback(null, false);
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -38,6 +46,31 @@ app.use(cors({
     optionsSuccessStatus: 204
 }));
 app.use(express.json());
+
+// Endpoints de Health Check e Ping (para Cron Jobs, Keep-Alive e pre-warm do frontend)
+// Executados ANTES do middleware de banco para garantir resposta imediata e sem timeout
+app.get(['/', '/health', '/api/health', '/api/ping'], async (req, res) => {
+    let dbStatus = 'disconnected';
+    try {
+        if (mongoose.connection.readyState === 1) {
+            dbStatus = 'connected';
+        } else {
+            // Tenta reconectar em background sem bloquear o response do ping
+            connectDatabase().catch((err) => console.error('Ping DB reconnect error:', err.message));
+            dbStatus = 'connecting';
+        }
+    } catch {
+        dbStatus = 'error';
+    }
+
+    res.status(200).json({
+        status: 'ok',
+        uptime: Math.floor(process.uptime()),
+        timestamp: new Date().toISOString(),
+        database: dbStatus,
+        message: 'WarTracker API is alive and running'
+    });
+});
 
 app.use(async (req, res, next) => {
     try {
@@ -52,10 +85,6 @@ app.use(async (req, res, next) => {
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/clan', require('./routes/clan'));
 app.use('/api/user', require('./routes/user'));
-
-app.get('/', (req, res) => {
-    res.send('WarTracker API is running...');
-});
 
 async function startServer() {
     try {
