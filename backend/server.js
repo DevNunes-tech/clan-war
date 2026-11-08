@@ -28,16 +28,19 @@ const allowedOrigins = [
     'http://127.0.0.1:5173',
     'http://localhost:5174',
     'http://127.0.0.1:5174',
-    // Produção
+    // Vercel (frontend)
+    'https://clan-war.vercel.app',
+    'https://clan-war-git-main.vercel.app',
+    // Domínio próprio
     'https://brootherwood.com.br',
     'https://www.brootherwood.com.br',
-    // ⚠️ REMOVIDO: 'http://brootherwood.com.br' (HTTP não funciona em prod)
-    // ⚠️ REMOVIDO: 'https://clan-war.vercel.app' e regex .vercel.app (se Render)
+    'http://brootherwood.com.br',
 ];
 
 const isAllowedOrigin = (origin) => {
     if (!origin) return true; // curl, Postman, mobile
-    return allowedOrigins.includes(origin);
+    if (allowedOrigins.includes(origin)) return true;
+    return /^https:\/\/clan-war[a-z0-9-]*\.vercel\.app$/.test(origin);
 };
 
 app.use(cors({
