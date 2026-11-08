@@ -1,3 +1,6 @@
+// ─────────────────────────────────────────────────────────────
+// Constantes
+// ─────────────────────────────────────────────────────────────
 const ATTACKS_PER_DAY = 4;
 const WAR_DAYS = 4;
 const MAX_WAR_ATTACKS = ATTACKS_PER_DAY * WAR_DAYS;
@@ -7,9 +10,12 @@ const STATUS = {
     inProgress: 'in_progress',
     notStarted: 'not_started',
     notInRace: 'not_in_race',
-    training: 'training'
+    training: 'training',
 };
 
+// ─────────────────────────────────────────────────────────────
+// Helpers puros
+// ─────────────────────────────────────────────────────────────
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 const toNumber = (value, fallback = 0) => {
@@ -17,19 +23,31 @@ const toNumber = (value, fallback = 0) => {
     return Number.isFinite(number) ? number : fallback;
 };
 
-const normalizeTag = (tag) => String(tag || '')
-    .trim()
-    .replace(/["']/g, '')
-    .toUpperCase();
+// Normaliza a tag sem impor validação de formato.
+const normalizeTag = (tag) => {
+    let normalized = String(tag || '')
+        .trim()
+        .replace(/["']/g, '');
+    if (!normalized) return '';
+    if (!normalized.startsWith('#')) normalized = `#${normalized}`;
+    return normalized.toUpperCase();
+};
 
-const isWarPeriodType = (periodType) => periodType === 'warDay' || periodType === 'colosseum';
+const isWarPeriodType = (periodType) =>
+    periodType === 'warDay' || periodType === 'colosseum';
 
+// ─────────────────────────────────────────────────────────────
+// Estado da guerra
+// ─────────────────────────────────────────────────────────────
 const getWarState = (riverRace = {}) => {
     const periodType = riverRace.periodType || 'unknown';
     const isWarDay = isWarPeriodType(periodType);
     const isTraining = periodType === 'training';
     const periodIndex = toNumber(riverRace.periodIndex, 0);
-    const sectionIndex = toNumber(riverRace.sectionIndex, Math.floor(periodIndex / 7));
+    const sectionIndex = toNumber(
+        riverRace.sectionIndex,
+        Math.floor(periodIndex / 7)
+    );
     const periodDay = ((periodIndex % 7) + 7) % 7;
     const warDay = isWarDay && periodDay >= 3 ? periodDay - 2 : null;
 
@@ -42,70 +60,69 @@ const getWarState = (riverRace = {}) => {
         isTraining,
         hasActiveRace: periodType !== 'unknown' && periodType !== 'none',
         warDay,
-        totalDays: WAR_DAYS
+        totalDays: WAR_DAYS,
     };
 };
 
-const getMemberTodayStatus = ({ isWarDay, isTraining, inRace, decksUsedToday }) => {
+// ─────────────────────────────────────────────────────────────
+// Status do membro no dia
+// ─────────────────────────────────────────────────────────────
+const getMemberTodayStatus = ({
+    isWarDay,
+    isTraining,
+    inRace,
+    decksUsedToday,
+}) => {
     if (isTraining) {
-        return {
-            key: STATUS.training,
-            label: 'Treino'
-        };
+        return { key: STATUS.training, label: 'Treino' };
     }
-
     if (!isWarDay) {
-        return {
-            key: STATUS.notInRace,
-            label: 'Fora da guerra'
-        };
+        return { key: STATUS.notInRace, label: 'Fora da guerra' };
     }
-
     if (!inRace) {
-        return {
-            key: STATUS.notInRace,
-            label: 'Ainda não iniciou'
-        };
+        return { key: STATUS.notInRace, label: 'Ainda não iniciou' };
     }
-
     if (decksUsedToday >= ATTACKS_PER_DAY) {
-        return {
-            key: STATUS.complete,
-            label: 'Completo'
-        };
+        return { key: STATUS.complete, label: 'Completo' };
     }
-
     if (decksUsedToday > 0) {
         const remaining = ATTACKS_PER_DAY - decksUsedToday;
         return {
             key: STATUS.inProgress,
-            label: remaining === 1 ? 'Falta 1' : `Faltam ${remaining}`
+            label: remaining === 1 ? 'Falta 1' : `Faltam ${remaining}`,
         };
     }
-
-    return {
-        key: STATUS.notStarted,
-        label: 'Não começou'
-    };
+    return { key: STATUS.notStarted, label: 'Não começou' };
 };
 
-const formatParticipant = (member, participant, warState) => {
+// ─────────────────────────────────────────────────────────────
+// Formatação de membro
+// ─────────────────────────────────────────────────────────────
+const formatParticipant = (member = {}, participant, warState) => {
     const inRace = Boolean(participant);
-    const decksUsedToday = clamp(toNumber(participant?.decksUsedToday, 0), 0, ATTACKS_PER_DAY);
-    const decksUsed = clamp(toNumber(participant?.decksUsed, 0), 0, MAX_WAR_ATTACKS);
+    const decksUsedToday = clamp(
+        toNumber(participant?.decksUsedToday, 0),
+        0,
+        ATTACKS_PER_DAY
+    );
+    const decksUsed = clamp(
+        toNumber(participant?.decksUsed, 0),
+        0,
+        MAX_WAR_ATTACKS
+    );
     const fame = toNumber(participant?.fame, 0);
     const status = getMemberTodayStatus({
         isWarDay: warState.isWarDay,
         isTraining: warState.isTraining,
         inRace,
-        decksUsedToday
+        decksUsedToday,
     });
 
     return {
-        id: member.tag,
-        name: member.name,
-        tag: member.tag,
-        role: member.role,
+        id: member.tag || '',
+        name: member.name || 'Desconhecido',
+        tag: member.tag || '',
+        role: member.role || 'member',
         trophies: toNumber(member.trophies, 0),
         inRace,
         fame,
@@ -114,29 +131,39 @@ const formatParticipant = (member, participant, warState) => {
         today: {
             decksUsed: decksUsedToday,
             decksRemaining: Math.max(0, ATTACKS_PER_DAY - decksUsedToday),
-            status: status.key
+            status: status.key,
         },
-        war: {
-            decksUsed,
-            fame
-        },
+        war: { decksUsed, fame },
         statusKey: status.key,
-        statusText: status.label
+        statusText: status.label,
     };
 };
 
-const formatMembers = (memberList = [], participants = [], warState = getWarState()) => {
+const formatMembers = (
+    memberList = [],
+    participants = [],
+    warState = getWarState()
+) => {
     const participantsMap = new Map(
-        participants.map((participant) => [normalizeTag(participant.tag), participant])
+        participants
+            .filter((p) => p?.tag) // ⚠️ ignora participantes sem tag
+            .map((p) => [normalizeTag(p.tag), p])
     );
 
-    return memberList.map((member) => formatParticipant(
-        member,
-        participantsMap.get(normalizeTag(member.tag)),
-        warState
-    ));
+    return memberList
+        .filter((m) => m?.tag) // ⚠️ ignora membros sem tag
+        .map((member) =>
+            formatParticipant(
+                member,
+                participantsMap.get(normalizeTag(member.tag)),
+                warState
+            )
+        );
 };
 
+// ─────────────────────────────────────────────────────────────
+// Metadados de guerra / histórico
+// ─────────────────────────────────────────────────────────────
 const inferCurrentSeasonId = (riverRace = {}, lastLogEntry) => {
     if (!lastLogEntry || !Number.isFinite(Number(lastLogEntry.seasonId))) {
         return null;
@@ -145,6 +172,16 @@ const inferCurrentSeasonId = (riverRace = {}, lastLogEntry) => {
     const currentSection = toNumber(riverRace.sectionIndex, 0);
     const lastSection = toNumber(lastLogEntry.sectionIndex, 0);
     const lastSeason = Number(lastLogEntry.seasonId);
+
+    // Se o lastLogEntry é muito antigo, assume que houve várias temporadas
+    const daysSinceLastLog = lastLogEntry?.createdDate
+        ? (Date.now() - new Date(lastLogEntry.createdDate).getTime()) /
+          86400000
+        : 0;
+
+    if (daysSinceLastLog > 14) {
+        return lastSeason + Math.floor(daysSinceLastLog / 7);
+    }
 
     if (currentSection < lastSection) {
         return lastSeason + 1;
@@ -155,9 +192,8 @@ const inferCurrentSeasonId = (riverRace = {}, lastLogEntry) => {
 
 const getWarLabel = (seasonId, sectionIndex) => {
     if (!Number.isFinite(Number(seasonId))) {
-        return `Semana ${(toNumber(sectionIndex, 0) + 1)}`;
+        return `Semana ${toNumber(sectionIndex, 0) + 1}`;
     }
-
     return `Guerra ${Number(seasonId)}.${toNumber(sectionIndex, 0) + 1}`;
 };
 
@@ -170,7 +206,7 @@ const getHistoryWarMeta = (war = {}, index = 0) => {
         sectionIndex,
         label: getWarLabel(seasonId, sectionIndex),
         createdDate: war.createdDate || null,
-        fallbackIndex: index + 1
+        fallbackIndex: index + 1,
     };
 };
 
@@ -186,5 +222,5 @@ module.exports = {
     formatMembers,
     inferCurrentSeasonId,
     getWarLabel,
-    getHistoryWarMeta
+    getHistoryWarMeta,
 };
