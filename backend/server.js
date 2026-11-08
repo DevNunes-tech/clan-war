@@ -1,16 +1,25 @@
+// ⚠️ PRIMEIRA LINHA — carrega .env ANTES de qualquer require
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const connectDatabase = require('./config/database');
 const { ensureEnv } = require('./middleware/validateEnv');
-require('dotenv').config();
 
 ensureEnv();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Necessário para rate limit e req.ip atrás do proxy do Render
+app.set('trust proxy', 1);
+
+// ─────────────────────────────────────────────────────────────
+// CORS
+// ─────────────────────────────────────────────────────────────
 const allowedOrigins = [
+    // Local dev
     'http://localhost:3000',
     'http://127.0.0.1:3000',
     'http://localhost:4173',
@@ -19,44 +28,45 @@ const allowedOrigins = [
     'http://127.0.0.1:5173',
     'http://localhost:5174',
     'http://127.0.0.1:5174',
-    'https://clan-war.vercel.app',
+    // Produção
     'https://brootherwood.com.br',
-    'http://brootherwood.com.br',
-    'https://www.brootherwood.com.br'
+    'https://www.brootherwood.com.br',
+    // ⚠️ REMOVIDO: 'http://brootherwood.com.br' (HTTP não funciona em prod)
+    // ⚠️ REMOVIDO: 'https://clan-war.vercel.app' e regex .vercel.app (se Render)
 ];
 
 const isAllowedOrigin = (origin) => {
-    if (!origin) return true;
-    if (allowedOrigins.includes(origin)) return true;
-    if (/^https:\/\/clan-war.*\.vercel\.app$/.test(origin)) return true;
-    return false;
+    if (!origin) return true; // curl, Postman, mobile
+    return allowedOrigins.includes(origin);
 };
 
 app.use(cors({
     origin: (origin, callback) => {
-        if (isAllowedOrigin(origin)) {
-            return callback(null, true);
-        }
+        if (isAllowedOrigin(origin)) return callback(null, true);
+        console.warn(`[CORS] Origem bloqueada: ${origin}`);
         return callback(null, false);
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
     preflightContinue: false,
-    optionsSuccessStatus: 204
+    optionsSuccessStatus: 204,
 }));
-app.use(express.json());
 
-// Endpoints de Health Check e Ping (para Cron Jobs, Keep-Alive e pre-warm do frontend)
-// Executados ANTES do middleware de banco para garantir resposta imediata e sem timeout
+app.use(express.json({ limit: '1mb' }));
+
+// ─────────────────────────────────────────────────────────────
+// Health check (antes do DB middleware — resposta rápida)
+// ─────────────────────────────────────────────────────────────
 app.get(['/', '/health', '/api/health', '/api/ping'], async (req, res) => {
     let dbStatus = 'disconnected';
     try {
         if (mongoose.connection.readyState === 1) {
             dbStatus = 'connected';
         } else {
-            // Tenta reconectar em background sem bloquear o response do ping
-            connectDatabase().catch((err) => console.error('Ping DB reconnect error:', err.message));
+            connectDatabase().catch((err) =>
+                console.error('Ping DB reconnect error:', err.message)
+            );
             dbStatus = 'connecting';
         }
     } catch {
@@ -68,34 +78,61 @@ app.get(['/', '/health', '/api/health', '/api/ping'], async (req, res) => {
         uptime: Math.floor(process.uptime()),
         timestamp: new Date().toISOString(),
         database: dbStatus,
-        message: 'WarTracker API is alive and running'
+        message: 'WarTracker API is alive and running',
     });
 });
 
-app.use(async (req, res, next) => {
-    try {
-        await connectDatabase();
-        next();
-    } catch (err) {
-        console.error('Could not connect to MongoDB', err);
-        res.status(500).json({ message: 'Could not connect to database' });
-    }
-});
-
+// ─────────────────────────────────────────────────────────────
+// Rotas
+// ─────────────────────────────────────────────────────────────
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/clan', require('./routes/clan'));
 app.use('/api/user', require('./routes/user'));
 
+// ─────────────────────────────────────────────────────────────
+// 404 handler
+// ─────────────────────────────────────────────────────────────
+app.use((req, res) => {
+    res.status(404).json({
+        success: false,
+        message: `Rota não encontrada: ${req.method} ${req.originalUrl}`,
+    });
+});
+
+// ─────────────────────────────────────────────────────────────
+// Error handler global
+// ─────────────────────────────────────────────────────────────
+app.use((err, req, res, next) => {
+    console.error('[Unhandled Error]', err);
+    res.status(err.status || 500).json({
+        success: false,
+        message:
+            process.env.NODE_ENV === 'production'
+                ? 'Erro interno do servidor'
+                : err.message,
+    });
+});
+
+// ─────────────────────────────────────────────────────────────
+// Boot
+// ─────────────────────────────────────────────────────────────
 async function startServer() {
     try {
         await connectDatabase();
-        console.log('Connected to MongoDB');
+        console.log('[startup] Connected to MongoDB');
 
-        app.listen(PORT, () => {
-            console.log(`Server is running on port ${PORT}`);
+        app.listen(PORT, '0.0.0.0', () => {
+            console.log(`[startup] Server is running on port ${PORT}`);
+            console.log(`[startup] NODE_ENV=${process.env.NODE_ENV || 'development'}`);
+            console.log(
+                `[startup] CLASH_ROYALE_BASE_URL=${process.env.CLASH_ROYALE_BASE_URL || '(usando fallback RoyaleAPI)'}`
+            );
+            console.log(
+                `[startup] CLASH_ROYALE_API_KEY=${process.env.CLASH_ROYALE_API_KEY ? `definida (${process.env.CLASH_ROYALE_API_KEY.length} chars)` : '❌ AUSENTE'}`
+            );
         });
     } catch (err) {
-        console.error('Could not connect to MongoDB', err);
+        console.error('[startup] Could not connect to MongoDB:', err.message);
         process.exit(1);
     }
 }
