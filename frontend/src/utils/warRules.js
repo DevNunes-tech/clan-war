@@ -12,14 +12,23 @@ const STATUS_STYLES = {
     training: 'text-slate-300 bg-slate-900/80 border-slate-700/80'
 };
 
-export const getMemberFame = (member = {}) =>
-    Number(member.war?.fame ?? member.fame ?? 0) || 0;
+// Retorna a fama do membro, garantindo que seja um número finito
+export const getMemberFame = (member = {}) => {
+    const value = Number(member.war?.fame ?? member.fame ?? 0);
+    return Number.isFinite(value) ? value : 0;
+};
 
-export const getTodayDecks = (member = {}) =>
-    Number(member.today?.decksUsed ?? member.decksUsedToday ?? 0) || 0;
+// Retorna os decks usados hoje, garantindo que seja um número finito
+export const getTodayDecks = (member = {}) => {
+    const value = Number(member.today?.decksUsed ?? member.decksUsedToday ?? 0);
+    return Number.isFinite(value) ? value : 0;
+};
 
-export const getWarDecks = (member = {}) =>
-    Number(member.war?.decksUsed ?? member.decksUsed ?? 0) || 0;
+// Retorna os decks usados na guerra, garantindo que seja um número finito
+export const getWarDecks = (member = {}) => {
+    const value = Number(member.war?.decksUsed ?? member.decksUsed ?? 0);
+    return Number.isFinite(value) ? value : 0;
+};
 
 export const getStatusKey = (member = {}) => member.statusKey || member.today?.status || 'not_started';
 
@@ -60,15 +69,22 @@ export const normalizeMemberWarData = (member = {}) => {
 
 export const normalizeWarMembers = (members = []) => members.map(normalizeMemberWarData);
 
-export const getNeedsAttention = (members = []) => members.filter((member) =>
-    ['in_progress', 'not_started'].includes(getStatusKey(member))
-);
+// Retorna membros que precisam de atenção do líder (apenas quem está na race)
+export const getNeedsAttention = (members = []) => members.filter((member) => {
+    const statusKey = getStatusKey(member);
+    const isInRace = Boolean(member.inRace);
+    return isInRace && ['in_progress', 'not_started'].includes(statusKey);
+});
 
+// Filtro da tabela de membros (corrigido para não misturar inativos)
 export const matchesMemberFilter = (member, filter) => {
     const statusKey = getStatusKey(member);
+    
     if (filter === 'all') return true;
     if (filter === 'complete') return statusKey === 'complete';
     if (filter === 'pending') return statusKey === 'in_progress';
-    if (filter === 'notStarted') return statusKey === 'not_started' || statusKey === 'not_in_race';
+    // "Não atacaram" agora mostra APENAS quem está na race e não começou
+    if (filter === 'notStarted') return statusKey === 'not_started' && Boolean(member.inRace); 
+    
     return true;
 };
