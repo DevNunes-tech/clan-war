@@ -10,7 +10,7 @@ export default function App() {
   ));
 
   useEffect(() => {
-    // Pré-aquecimento preventivo do backend (acorda o Render se estiver em modo sleep)
+    // Pré-aquecimento preventivo do backend.
     fetch(buildUrl('/api/health')).catch(() => {});
   }, []);
 

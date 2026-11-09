@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Crown, ArrowRight, ShieldCheck, Loader2, LockKeyhole, Sparkles, BadgeCheck } from 'lucide-react';
-import { buildUrl } from '../utils/api';
+import { ApiError, apiPost, setToken } from '../utils/api';
 
 export default function LoginPage({ onNavigate }) {
     const [playerTag, setPlayerTag] = useState('');
@@ -21,22 +21,19 @@ export default function LoginPage({ onNavigate }) {
         }, 4000);
 
         const warmUpTimer2 = window.setTimeout(() => {
-            setStatusMessage('O backend do Render está acordando do repouso (cold start), quase pronto...');
+            setStatusMessage('O backend do Fly.io está inicializando, quase pronto...');
         }, 14000);
 
         try {
-            const response = await fetch(buildUrl('/api/auth/login'), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ playerTag }),
-                signal: controller.signal
-            });
-
-            const data = await response.json();
+            const data = await apiPost(
+                '/api/auth/login',
+                { playerTag },
+                { skipAuth: true, signal: controller.signal }
+            );
 
             if (data.success) {
                 setStatusMessage('Cargo confirmado. Liberando o QG de guerra...');
-                localStorage.setItem('token', data.token);
+                setToken(data.token);
                 localStorage.setItem('user', JSON.stringify(data.user));
                 onNavigate('dashboard');
             } else {
@@ -46,8 +43,10 @@ export default function LoginPage({ onNavigate }) {
         } catch (err) {
             setStatusMessage('Não foi possível concluir a consulta.');
             setError(err.name === 'AbortError'
-                ? 'O servidor demorou mais de 60s para responder. O Render pode estar reiniciando, tente novamente em instantes.'
-                : 'Erro ao conectar com o servidor. Tente novamente.');
+                ? 'O servidor do Fly.io demorou mais de 60s para responder. Tente novamente em instantes.'
+                : err instanceof ApiError
+                    ? err.message
+                    : 'Erro ao conectar com o servidor. Tente novamente.');
         } finally {
             window.clearTimeout(timeoutId);
             window.clearTimeout(warmUpTimer1);

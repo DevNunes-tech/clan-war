@@ -1,24 +1,12 @@
 // ─────────────────────────────────────────────────────────────
 // Configuração da API
 // ─────────────────────────────────────────────────────────────
-const normalizeApiUrl = (value) => {
-    const configuredUrl = String(value || '').trim();
-    if (!configuredUrl) return '';
-
-    const urlMatch = configuredUrl.match(/https?:\/\/[^)\]\s]+/i);
-    return (urlMatch ? urlMatch[0] : configuredUrl).replace(/\/+$/, '');
-};
-
-const API_URL =
-    normalizeApiUrl(import.meta.env.VITE_API_URL) ||
-    (import.meta.env.DEV
-        ? 'http://localhost:5000'
-        : 'https://clan-war.onrender.com');
+const API_URL = 'https://clan-war.fly.dev';
 
 // ─────────────────────────────────────────────────────────────
 // Token helpers
 // ─────────────────────────────────────────────────────────────
-const TOKEN_KEY = 'wartracker_token';
+const TOKEN_KEY = 'token';
 
 export const getToken = () => {
     try {
@@ -68,6 +56,7 @@ export async function apiFetch(path, options = {}) {
         params = {},
         headers = {},
         skipAuth = false,
+        signal,
     } = options;
 
     const url = buildUrl(path, params);
@@ -95,6 +84,7 @@ export async function apiFetch(path, options = {}) {
         method,
         headers: finalHeaders,
         body: finalBody,
+        signal,
     });
 
     // Parse do body (JSON ou texto)
