@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Crown, ArrowRight, ShieldCheck, Loader2, LockKeyhole, Sparkles, BadgeCheck } from 'lucide-react';
+import { Crown, ArrowRight, ArrowLeft, ShieldCheck, Loader2, Swords } from 'lucide-react';
 import { ApiError, apiPost, setToken } from '../utils/api';
 
 export default function LoginPage({ onNavigate }) {
@@ -10,6 +10,11 @@ export default function LoginPage({ onNavigate }) {
 
     const handleLogin = async (e) => {
         e.preventDefault();
+        if (!playerTag.trim()) {
+            setError('Por favor, informe a sua tag.');
+            return;
+        }
+
         setLoading(true);
         setError('');
         setStatusMessage(`Consultando a tag ${playerTag.trim()} na API oficial...`);
@@ -56,177 +61,91 @@ export default function LoginPage({ onNavigate }) {
     };
 
     return (
-        <div className="relative min-h-screen overflow-hidden bg-[#061122] text-slate-100">
-            <div className="pointer-events-none absolute inset-0 wt-grid opacity-30" />
+        <div className="relative flex min-h-screen flex-col overflow-hidden bg-river-arena font-sans text-slate-100 selection:bg-amber-500/30">
+            <div className="pointer-events-none absolute inset-0 wt-grid opacity-20" />
 
-            <header className="relative z-10 border-b-2 border-[#0d2242] bg-[#071733]/85 px-4 py-4 backdrop-blur sm:px-6">
-                <div className="mx-auto flex max-w-7xl items-center justify-between">
-                    <button className="flex items-center gap-3" onClick={() => onNavigate('landing')}>
-                        <div className="relative flex h-11 w-11 items-center justify-center rounded-2xl border-2 border-[#4f3100] bg-gradient-to-b from-[#ffdb4d] to-[#c78000] shadow-[0_3px_0_#694000]">
-                            <div className="btn-gloss" />
-                            <Crown className="relative h-6 w-6 fill-[#0b1730] text-[#0b1730]" />
-                        </div>
-                        <div className="text-left">
-                            <span className="font-clash text-xl tracking-wider text-yellow-300 stroke-black-sm">WARTRACKER</span>
-                            <span className="block text-[10px] font-bold uppercase tracking-wide text-blue-300">Quartel de guerra</span>
-                        </div>
-                    </button>
-                    <button onClick={() => onNavigate('landing')} className="hidden items-center gap-2 font-clash text-sm uppercase text-blue-200 transition-colors hover:text-yellow-300 sm:flex">
-                        <ArrowRight className="h-4 w-4 rotate-180" /> Voltar para a arena
-                    </button>
-                </div>
+            <header className="relative z-10 p-6">
+                <button
+                    onClick={() => onNavigate('landing')}
+                    className="inline-flex items-center gap-2 text-sm font-bold text-slate-400 transition-colors hover:text-white"
+                >
+                    <ArrowLeft className="h-4 w-4" /> Voltar para a Arena
+                </button>
             </header>
 
-            <div className="mx-auto grid min-h-[calc(100vh-78px)] max-w-7xl items-center gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8">
-                <div className="relative z-10 hidden lg:block">
-                    <div className="max-w-2xl space-y-8">
-                        <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-[0.32em] text-slate-300">
-                            <LockKeyhole className="h-4 w-4 text-[#F5B100]" /> Acesso estratégico
+            <main className="relative z-10 flex flex-1 items-center justify-center p-4">
+                <div className="w-full max-w-md">
+                    <div className="mb-10 text-center">
+                        <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl border border-[#f2d99a]/30 bg-gradient-to-br from-amber-300 to-amber-600 shadow-lg shadow-amber-500/20">
+                            <Crown className="h-8 w-8 text-[#17202a]" />
                         </div>
-
-                        <div className="space-y-5">
-                            <h1 className="text-5xl font-black tracking-tight text-white xl:text-6xl">
-                                Entre no{' '}
-                                <span className="wt-text-gradient">QG de guerra</span>
-                            </h1>
-                            <p className="max-w-xl text-lg leading-relaxed text-slate-300">
-                                Autenticação por tag, validação pela API oficial e acesso apenas para líderes e co-líderes do clã monitorado.
-                            </p>
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-4">
-                            {[
-                                { label: 'Segurança', value: 'JWT + API' },
-                                { label: 'Leitura', value: 'Tempo real' },
-                                { label: 'Perfil', value: 'Liderança' },
-                            ].map((item) => (
-                                <div key={item.label} className="wt-surface rounded-3xl p-5">
-                                    <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-slate-500">{item.label}</p>
-                                    <p className="mt-2 text-lg font-black text-white">{item.value}</p>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="rounded-2xl border-2 border-[#1c3e70] bg-gradient-to-b from-[#0f2342] to-[#071326] p-6 shadow-inner">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="font-clash text-xs uppercase tracking-wider text-blue-300 stroke-black-sm">Como o portão funciona</p>
-                                    <h2 className="mt-2 font-clash text-2xl text-white stroke-black-sm">Conectado ao Clash Royale</h2>
-                                </div>
-                                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-400">
-                                    <BadgeCheck className="h-6 w-6" />
-                                </div>
-                            </div>
-
-                            <div className="mt-5 space-y-3">
-                                {['Você digita sua tag de jogador', 'O sistema checa seu cargo no clã', 'Painel WarRoom liberado'].map((step, index) => (
-                                    <div key={step} className="flex items-center gap-3 rounded-xl border border-[#1a3863] bg-[#0a182e] px-3 py-2.5">
-                                        <span className={`flex h-7 w-7 items-center justify-center rounded-full font-clash text-xs font-bold text-stone-950 ${index === 2 ? 'bg-emerald-400' : 'bg-yellow-400'}`}>{index + 1}</span>
-                                        <span className="text-sm font-medium text-slate-300">{step}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+                        <h1 className="mb-2 text-3xl font-black text-white">Acesse o QG</h1>
+                        <p className="text-slate-400">Validação segura via API oficial do Clash Royale.</p>
                     </div>
-                </div>
 
-                <div className="relative z-10 mx-auto w-full max-w-xl">
-                    <div className="arena-stone wt-border-glow rounded-3xl p-4 sm:p-5">
-                        <div className="rounded-[1.75rem] border-2 border-[#1d437d] bg-[#09172e]/80 p-6 sm:p-8">
-                            <div className="mb-8 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 via-amber-500 to-orange-600">
-                                        <Crown className="h-6 w-6 text-[#080B14] fill-[#080B14]" />
-                                    </div>
-                                    <div className="text-left">
-                                        <p className="font-clash text-sm text-white stroke-black-sm">WARTRACKER QG</p>
-                                        <p className="text-[10px] font-bold text-blue-300">API oficial • conectado</p>
-                                    </div>
-                                </div>
-                                <div className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-400">
-                                    Online
-                                </div>
-                            </div>
+                    <div className="wt-surface relative overflow-hidden rounded-3xl p-8 shadow-2xl backdrop-blur-xl">
+                        <div className="absolute left-0 top-0 h-px w-full bg-gradient-to-r from-transparent via-amber-400/70 to-transparent" />
 
-                            <div className="mb-8 space-y-3">
-                                <div className="inline-flex items-center gap-2 rounded-full border-2 border-[#2b5ba3] bg-[#122b52] px-3 py-1 text-xs font-clash uppercase tracking-wider text-yellow-300 stroke-black-sm">
-                                    <Sparkles className="h-4 w-4" /> Acesso ao quartel
-                                </div>
-                                <h2 className="font-clash text-3xl tracking-wide text-white stroke-black-md sm:text-4xl">Acesse o QG</h2>
-                                <p className="max-w-md text-sm leading-relaxed text-slate-400">
-                                    Informe sua tag para validar o cargo e liberar o painel completo do WarTracker.
-                                </p>
-                            </div>
-
-                            {error && (
-                                <div className="mb-6 rounded-2xl border border-red-500/20 bg-red-500/10 p-4">
-                                    <div className="flex items-start gap-3">
-                                        <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-red-400" />
-                                        <p className="text-sm font-medium leading-relaxed text-red-200">{error}</p>
-                                    </div>
-                                </div>
-                            )}
-
-                            <form onSubmit={handleLogin} className="space-y-5">
-                                <div className="space-y-2">
-                                    <label className="font-clash text-sm uppercase tracking-wider text-yellow-300 stroke-black-sm">🎯 Tag do jogador ou do clã</label>
+                        <form onSubmit={handleLogin} className="space-y-6">
+                            <div className="space-y-2">
+                                <label htmlFor="player-tag" className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400">
+                                    <Swords className="h-4 w-4 text-amber-500" /> Tag do Jogador
+                                </label>
+                                <div className="relative">
                                     <input
+                                        id="player-tag"
                                         type="text"
                                         required
                                         value={playerTag}
                                         onChange={(e) => setPlayerTag(e.target.value.toUpperCase())}
-                                        className="w-full rounded-2xl border-4 border-[#28579e] bg-[#071426] px-4 py-4 text-xl font-clash uppercase tracking-widest text-white outline-none transition-colors placeholder:text-blue-400/40 focus:border-yellow-400"
-                                        placeholder="#YJ08GRQU"
+                                        placeholder="Digite sua tag de jogador"
+                                        autoComplete="off"
+                                        className="w-full rounded-xl border border-white/10 bg-slate-950/40 py-4 pl-4 pr-12 font-mono text-lg text-white outline-none transition-colors placeholder:text-slate-600 focus:border-amber-500/50 focus:bg-slate-950/60"
                                     />
-                                    <p className="px-1 text-xs text-blue-300">Localize no perfil do jogo abaixo do seu nome. Sem senha.</p>
+                                    <ShieldCheck className="absolute right-4 top-1/2 h-6 w-6 -translate-y-1/2 text-emerald-500/60" />
                                 </div>
+                                <p className="text-xs text-slate-500">Apenas líderes e co-líderes do clã monitorado.</p>
+                            </div>
 
-                                <div className="flex flex-wrap items-center gap-2 text-xs text-blue-300">
-                                    <span className="font-bold uppercase">Sugestões:</span>
-                                    {['#YJ08GRQU', '#2PP9UU0L'].map((tag) => (
-                                        <button key={tag} type="button" onClick={() => setPlayerTag(tag)} className="rounded-lg border border-[#234f8c] bg-[#0e2447] px-2.5 py-1 font-clash text-yellow-300 transition-colors hover:bg-[#18396e]">{tag}</button>
-                                    ))}
+                            {error && (
+                                <div role="alert" className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm font-medium text-red-300">
+                                    {error}
                                 </div>
+                            )}
 
-                                {(loading || error) && (
-                                    <div className={`rounded-2xl border-2 p-3.5 ${error ? 'border-red-500/40 bg-red-950/30' : 'border-[#1f4b8c] bg-[#091e3d]'}`}>
-                                        <div className="flex items-center justify-between text-xs font-bold uppercase">
-                                            <span className="text-blue-200">Validação com a arena</span>
-                                            <span className={error ? 'text-red-300' : 'text-yellow-300'}>{error ? 'RECUSADO' : 'CONSULTANDO...'}</span>
-                                        </div>
-                                        <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#061122]"><div className={`h-full transition-all duration-500 ${error ? 'w-full bg-red-500' : 'w-2/3 bg-gradient-to-r from-yellow-400 to-amber-500'}`} /></div>
-                                        <p className={`mt-2 text-[11px] font-medium ${error ? 'text-red-200' : 'text-blue-300'}`}>{error || statusMessage}</p>
+                            {loading && (
+                                <div aria-live="polite" className="rounded-xl border border-sky-400/15 bg-sky-950/30 p-3">
+                                    <div className="mb-2 flex items-center justify-between gap-3 text-xs font-bold uppercase">
+                                        <span className="text-sky-200">Validação com a arena</span>
+                                        <span className="text-amber-300">CONSULTANDO...</span>
                                     </div>
-                                )}
-
-                                <button
-                                    type="submit"
-                                    disabled={loading}
-                                    className="group relative inline-flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-[#543200] bg-gradient-to-b from-[#ffe543] via-[#ffbe0b] to-[#c77a00] px-5 py-4 text-sm font-clash uppercase tracking-wider text-white shadow-[0_6px_0_#804900,0_10px_20px_rgba(0,0,0,0.7)] transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
-                                >
-                                    <div className="btn-gloss" />
-                                    {loading ? (
-                                        <>
-                                            Validando acesso <Loader2 className="h-5 w-5 animate-spin" />
-                                        </>
-                                    ) : (
-                                        <>
-                                            Entrar no painel <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
-                                        </>
-                                    )}
-                                </button>
-                            </form>
+                                    <div className="h-1.5 overflow-hidden rounded-full bg-slate-950/70">
+                                        <div className="h-full w-2/3 animate-pulse rounded-full bg-gradient-to-r from-amber-400 to-sky-400" />
+                                    </div>
+                                    <p className="mt-2 text-xs text-slate-300">{statusMessage}</p>
+                                </div>
+                            )}
 
                             <button
-                                onClick={() => onNavigate('landing')}
-                                className="mt-5 flex w-full items-center justify-center gap-2 font-clash text-sm uppercase text-blue-300 transition-colors hover:text-yellow-300"
+                                type="submit"
+                                disabled={loading}
+                                className="group inline-flex w-full items-center justify-center gap-3 rounded-xl border border-amber-200/20 bg-gradient-to-r from-amber-500 to-orange-600 py-4 font-bold text-white shadow-lg shadow-amber-950/30 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                             >
-                                <ArrowRight className="h-4 w-4 rotate-180" /> Voltar para a apresentação do clã
+                                {loading ? (
+                                    <><Loader2 className="h-5 w-5 animate-spin" /> Validando acesso...</>
+                                ) : (
+                                    <>Entrar no Painel <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" /></>
+                                )}
                             </button>
-                        </div>
+                        </form>
+                    </div>
+
+                    <div className="mt-8 flex items-center justify-center gap-2 text-center text-xs text-slate-500">
+                        <ShieldCheck className="h-4 w-4 text-emerald-500" />
+                        Conexão criptografada e segura.
                     </div>
                 </div>
-            </div>
+            </main>
         </div>
     );
 }
