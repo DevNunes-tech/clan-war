@@ -10,7 +10,8 @@ líderes e co-líderes.
 - Histórico de guerras e participação individual.
 - Alertas e tabela de advertências, com exportação dos dados exibidos.
 - Registro de justificativas de presença.
-- Login pela tag do jogador, validando o clã e o cargo na API do Clash Royale.
+- Login pela tag do jogador, com liberação VIP e validação do clã e do cargo na API do Clash Royale.
+- Contato com o suporte pelo WhatsApp para solicitar a liberação de acesso VIP.
 - Perfil e preferências do usuário.
 
 ## Tecnologias
@@ -137,8 +138,21 @@ Content-Type: application/json
 }
 ```
 
-O login confere se o jogador pertence ao clã configurado e se é líder ou
-co-líder. Em caso de sucesso, retorna um token JWT válido por 12 horas.
+O login segue estas verificações:
+
+1. Confere se a tag está na lista VIP mantida em `backend/routes/auth.js`.
+2. Consulta a API do Clash Royale e confirma que o jogador pertence ao clã
+   definido por `CLAN_TAG`.
+3. Confirma que o jogador é líder ou co-líder.
+
+Tags fora da lista VIP recebem HTTP 403. Para liberar ou remover um cliente,
+adicione ou remova sua tag normalizada (com `#` e em maiúsculas) da constante
+`CLIENTES_VIP` em `backend/routes/auth.js` e publique a atualização do backend.
+Não coloque a lista de clientes VIP no frontend ou em documentação pública.
+Após as validações, o endpoint retorna um token JWT válido por 12 horas.
+
+O CTA da Landing Page direciona novos clientes ao suporte pelo WhatsApp. A
+liberação é manual; não há integração de pagamento ou checkout automático.
 
 ### Rotas do clã
 
