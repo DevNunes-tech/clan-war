@@ -1,4 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Lilita+One&family=Inter:wght@400;500;600;700;800;900&display=swap');
+/* ❌ REMOVIDO: @import url('...'); 
+   ✅ FAÇA ISSO NO index.html:
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+   <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+*/
+
 @import "tailwindcss";
 
 :root {
@@ -26,7 +32,8 @@
 
   body {
     @apply antialiased text-slate-100;
-    font-family: 'Inter', sans-serif;
+    /* Fallback para Arial se a Inter falhar */
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
     background:
       radial-gradient(circle at 50% 15%, #183e78 0%, #081836 55%, #040c1c 100%),
       repeating-linear-gradient(45deg, rgba(255,255,255,0.015) 0, rgba(255,255,255,0.015) 15px, transparent 15px, transparent 30px);
@@ -65,7 +72,8 @@
   }
 
   .font-clash {
-    font-family: 'Lilita One', 'Inter', sans-serif;
+    /* Fallback para Impact/Arial Black se a Lilita One falhar */
+    font-family: 'Lilita One', 'Impact', 'Arial Black', sans-serif;
     letter-spacing: 0.04em;
   }
 
@@ -201,6 +209,13 @@
     color: var(--wt-text);
   }
 
+  /* 
+   * ⚠️ NOTA TÉCNICA:
+   * O bloco abaixo usa !important para sobrescrever o Tailwind.
+   * Isso é uma dívida técnica para manter o tema escuro.
+   * A solução definitiva seria usar `darkMode: 'class'` no tailwind.config.js.
+   * Mantido aqui para não quebrar os componentes existentes.
+   */
   .wt-dashboard .bg-white,
   .wt-dashboard .bg-slate-50,
   .wt-dashboard .bg-slate-100 {
