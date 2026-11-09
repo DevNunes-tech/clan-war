@@ -2,7 +2,7 @@ import React from 'react';
 import { AlertTriangle, CheckCircle2, Clock3, Swords } from 'lucide-react';
 import { formatNumber } from '../../utils/formatters';
 
-export default function DailyWarStats({ today = {}, isWarDay = false }) {
+function DailyWarStats({ today = {}, isWarDay = false }) {
     if (!isWarDay) {
         return (
             <section className="wt-surface rounded-2xl p-5">
@@ -15,11 +15,21 @@ export default function DailyWarStats({ today = {}, isWarDay = false }) {
 
     const used = Number(today.attacksUsed || 0);
     const possible = Number(today.attacksPossible || 0);
-    const progress = possible ? (used / possible) * 100 : 0;
+    
+    // Garante que o progresso máximo seja 100
+    const rawProgress = possible ? (used / possible) * 100 : 0;
+    const progress = Math.min(100, rawProgress);
+
     const cards = [
-        ['Completos', today.playersComplete || 0, CheckCircle2, 'text-emerald-300'],
-        ['Pendentes', today.playersPending || 0, Clock3, 'text-amber-300'],
-        ['Não começaram', (today.playersNotStarted || 0) + (today.playersNotInRace || 0), AlertTriangle, 'text-red-300']
+        { label: 'Completos', value: today.playersComplete || 0, Icon: CheckCircle2, color: 'text-emerald-300' },
+        { label: 'Pendentes', value: today.playersPending || 0, Icon: Clock3, color: 'text-amber-300' },
+        { 
+            label: 'Não começaram', 
+            value: today.playersNotStarted || 0, 
+            Icon: AlertTriangle, 
+            color: 'text-red-300',
+            subtitle: today.playersNotInRace > 0 ? `+${today.playersNotInRace} fora da corrida` : null
+        }
     ];
 
     return (
@@ -34,20 +44,29 @@ export default function DailyWarStats({ today = {}, isWarDay = false }) {
                     {possible ? `${progress.toFixed(1).replace('.', ',')}% concluído` : 'Sem dados'}
                 </span>
             </div>
+            
             <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/8">
-                <div className="h-full rounded-full bg-amber-400 transition-all" style={{ width: `${Math.min(100, progress)}%` }} />
+                <div className="h-full rounded-full bg-amber-400 transition-all" style={{ width: `${progress}%` }} />
             </div>
+            
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                {cards.map(([label, value, Icon, color]) => (
-                    <div key={label} className="flex items-center gap-3 rounded-xl border border-white/7 bg-white/[0.03] p-3">
-                        {React.createElement(Icon, { className: `h-5 w-5 ${color}` })}
-                        <div>
-                            <p className="text-xl font-black text-white">{value}</p>
-                            <p className="text-xs text-slate-400">{label}</p>
+                {cards.map(({ label, value, Icon, color, subtitle }) => (
+                    <div key={label} className="flex flex-col gap-1 rounded-xl border border-white/7 bg-white/[0.03] p-3">
+                        <div className="flex items-center gap-3">
+                            <Icon className={`h-5 w-5 ${color}`} />
+                            <div>
+                                <p className="text-xl font-black text-white">{value}</p>
+                                <p className="text-xs text-slate-400">{label}</p>
+                            </div>
                         </div>
+                        {subtitle && (
+                            <p className="ml-8 text-[10px] font-bold text-slate-500">{subtitle}</p>
+                        )}
                     </div>
                 ))}
             </div>
         </section>
     );
 }
+
+export default React.memo(DailyWarStats);
