@@ -1,12 +1,35 @@
+# Dependências
 node_modules/
+
+# Ambiente — NUNCA commitar
 .env
 .env.local
 .env.*.local
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Build
 dist/
 build/
 coverage/
+
+# Logs
 *.log
+npm-debug.log*
+
+# Sistema
 .DS_Store
+Thumbs.db
+
+# IDE
 .vscode/
 .idea/
+*.swp
+
+# Vercel
 .vercel/
+
+# Testes
+coverage/
+.nyc_output/
