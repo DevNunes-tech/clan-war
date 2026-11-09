@@ -1,22 +1,60 @@
-import React from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { Trophy, X } from 'lucide-react';
 import { formatNumber } from '../../utils/formatters';
 import { getTodayDecks, getWarDecks, getMemberFame, WAR_RULES } from '../../utils/warRules';
 
+// Normaliza tags para comparação segura
+const normalizeTag = (tag) => String(tag || '').trim().replace(/^#/, '').toUpperCase();
+
 export default function MemberDetailModal({ member, attendance = [], history = [], justification, onJustificationChange, onSave, onClose, isSaving }) {
+    const modalRef = useRef(null);
+
+    // Fecha com Esc
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') onClose();
+        };
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [onClose]);
+
+    // Foco automático no modal
+    useEffect(() => {
+        if (member && modalRef.current) {
+            modalRef.current.focus();
+        }
+    }, [member]);
+
+    // Normaliza tag do membro uma única vez
+    const memberTagNormalized = useMemo(() => normalizeTag(member?.tag), [member?.tag]);
+
+    // Filtra os registros de advertência com tag normalizada
+    const memberAttendance = useMemo(() => {
+        if (!member) return [];
+        return attendance.filter((entry) => normalizeTag(entry.memberTag) === memberTagNormalized);
+    }, [attendance, memberTagNormalized, member]);
+
+    // Busca o histórico com tag normalizada
+    const memberHistory = useMemo(() => {
+        if (!member) return null;
+        return history.find((item) => normalizeTag(item.tag) === memberTagNormalized);
+    }, [history, memberTagNormalized, member]);
+
     if (!member) return null;
 
     const today = getTodayDecks(member);
     const warDecks = getWarDecks(member);
     const fame = getMemberFame(member);
     const canJustify = member.statusKey === 'in_progress' || member.statusKey === 'not_started';
-    const memberAttendance = attendance.filter((entry) => entry.memberTag === member.id || entry.memberTag === member.tag);
-    const memberHistory = history.find((item) => item.tag === member.tag);
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <button aria-label="Fechar ficha" className="absolute inset-0 bg-black/70" onClick={onClose} />
-            <div className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-white/10 bg-[#0B1220] shadow-2xl">
+            <div
+                ref={modalRef}
+                tabIndex={-1}
+                className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-white/10 bg-[#0B1220] shadow-2xl outline-none"
+            >
                 <div className="flex items-center justify-between border-b border-white/8 p-5">
                     <div>
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Ficha do guerreiro</p>
@@ -25,6 +63,7 @@ export default function MemberDetailModal({ member, attendance = [], history = [
                     </div>
                     <button onClick={onClose} className="rounded-lg p-2 text-slate-400 hover:bg-white/5 hover:text-white"><X className="h-5 w-5" /></button>
                 </div>
+
                 <div className="space-y-5 p-5">
                     <div className="grid grid-cols-3 gap-3">
                         <div className="rounded-xl border border-white/8 bg-white/[0.03] p-3">
