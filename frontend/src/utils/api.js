@@ -1,6 +1,7 @@
 // ─────────────────────────────────────────────────────────────
 // Configuração da API
 // ─────────────────────────────────────────────────────────────
+// URL fixa do backend no Fly.io
 const API_URL = 'https://clan-war.fly.dev';
 
 // ─────────────────────────────────────────────────────────────
@@ -47,7 +48,7 @@ export class ApiError extends Error {
  * - Tratamento de 403 (retorna mensagem)
  *
  * @param {string} path - Ex: '/api/clan/stats'
- * @param {object} options - { method, body, params, headers, skipAuth }
+ * @param {object} options - { method, body, params, headers, skipAuth, signal }
  */
 export async function apiFetch(path, options = {}) {
     const {
@@ -79,6 +80,7 @@ export async function apiFetch(path, options = {}) {
         finalHeaders['Content-Type'] = 'application/json';
         finalBody = JSON.stringify(body);
     }
+    // Nota: Se for FormData, o navegador define o Content-Type automaticamente (com o boundary).
 
     const response = await fetch(url, {
         method,
@@ -101,7 +103,10 @@ export async function apiFetch(path, options = {}) {
         // 401: token inválido/expirado → limpa e sinaliza
         if (response.status === 401) {
             clearToken();
-            window.dispatchEvent(new CustomEvent('auth:logout'));
+            // Verifica se está no navegador antes de disparar o evento
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('auth:logout'));
+            }
         }
 
         const message =
@@ -119,7 +124,12 @@ export async function apiFetch(path, options = {}) {
 // buildUrl (mantido para compatibilidade)
 // ─────────────────────────────────────────────────────────────
 export function buildUrl(path, params = {}) {
-    const url = new URL(path, API_URL);
+    // Garante que o path sempre comece com '/'
+    const safePath = path.startsWith('/') ? path : `/${path}`;
+    // Remove barra final da API_URL (se houver)
+    const safeBase = API_URL.replace(/\/+$/, '');
+    
+    const url = new URL(safePath, safeBase);
     Object.keys(params).forEach((k) => {
         if (params[k] !== undefined && params[k] !== null) {
             url.searchParams.set(k, String(params[k]));
