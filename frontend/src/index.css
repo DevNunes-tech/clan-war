@@ -1,28 +1,21 @@
-/* ❌ REMOVIDO: @import url('...'); 
-   ✅ FAÇA ISSO NO index.html:
-   <link rel="preconnect" href="https://fonts.googleapis.com">
-   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-   <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-*/
-
 @import "tailwindcss";
 
 :root {
   color-scheme: dark;
-  --wt-bg: #061124;
-  --wt-bg-strong: #081936;
-  --wt-surface: #0d1d37;
-  --wt-card: rgba(10, 21, 39, 0.9);
-  --wt-border: rgba(124, 158, 230, 0.18);
-  --wt-text: #eaf2ff;
-  --wt-muted: #9bb1d9;
-  --wt-blue: #3f88f2;
-  --wt-blue-deep: #1c5cb5;
-  --wt-gold: #ffbe0b;
-  --wt-gold-soft: #ffe978;
-  --wt-green: #2fc447;
-  --wt-red: #e62e2e;
-  --wt-purple: #bf1db3;
+  --wt-bg: #071523;
+  --wt-bg-strong: #0a2032;
+  --wt-surface: #2d1e12;
+  --wt-card: rgba(24, 20, 16, 0.94);
+  --wt-border: rgba(191, 158, 105, 0.24);
+  --wt-text: #edf3f7;
+  --wt-muted: #9aabba;
+  --wt-blue: #4da4d8;
+  --wt-blue-deep: #1d638f;
+  --wt-gold: #d8b66f;
+  --wt-gold-soft: #f2d99a;
+  --wt-green: #39b989;
+  --wt-red: #d85b53;
+  --wt-purple: #a58bc7;
 }
 
 @layer base {
@@ -34,9 +27,7 @@
     @apply antialiased text-slate-100;
     /* Fallback para Arial se a Inter falhar */
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-    background:
-      radial-gradient(circle at 50% 15%, #183e78 0%, #081836 55%, #040c1c 100%),
-      repeating-linear-gradient(45deg, rgba(255,255,255,0.015) 0, rgba(255,255,255,0.015) 15px, transparent 15px, transparent 30px);
+    background: #071523;
     color: var(--wt-text);
   }
 
@@ -67,102 +58,62 @@
 }
 
 @layer utilities {
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
+  .bg-river-arena {
+    background-color: #071523;
+    background-image:
+      radial-gradient(ellipse at 50% -10%, rgba(49, 132, 174, 0.28), transparent 52%),
+      radial-gradient(ellipse at 85% 40%, rgba(28, 93, 126, 0.2), transparent 42%),
+      repeating-radial-gradient(ellipse at 50% 115%, transparent 0 34px, rgba(129, 190, 205, 0.035) 36px 38px, transparent 40px 70px),
+      linear-gradient(180deg, #0b2638 0%, #081b2b 48%, #06131f 100%);
   }
 
-  .font-clash {
-    /* Fallback para Impact/Arial Black se a Lilita One falhar */
-    font-family: 'Lilita One', 'Impact', 'Arial Black', sans-serif;
-    letter-spacing: 0.04em;
-  }
-
-  .stroke-black-sm {
-    text-shadow:
-      -1.5px -1.5px 0 #000,
-      1.5px -1.5px 0 #000,
-      -1.5px 1.5px 0 #000,
-      1.5px 1.5px 0 #000,
-      0 3px 0 rgba(0, 0, 0, 0.8);
-  }
-
-  .stroke-black-md {
-    text-shadow:
-      -2.5px -2.5px 0 #000,
-      2.5px -2.5px 0 #000,
-      -2.5px 2.5px 0 #000,
-      2.5px 2.5px 0 #000,
-      0 5px 0 rgba(0, 0, 0, 0.85);
-  }
-
-  .stroke-black-lg {
-    text-shadow:
-      -3.5px -3.5px 0 #000,
-      3.5px -3.5px 0 #000,
-      -3.5px 3.5px 0 #000,
-      3.5px 3.5px 0 #000,
-      0 7px 0 rgba(0, 0, 0, 0.9);
-  }
-
-  .btn-gloss {
-    position: absolute;
-    top: 2px;
-    left: 6px;
-    right: 6px;
-    height: 42%;
-    background: linear-gradient(to bottom, rgba(255,255,255,0.65), rgba(255,255,255,0.15));
-    border-radius: 9999px;
-    pointer-events: none;
-  }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { scrollbar-width: none; }
 
   .rivet {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 35% 35%, #fff3a1, #b58118 70%, #4a3103 100%);
-    border: 1px solid #332002;
-    box-shadow: 0 2px 3px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.8);
+    width: 9px; height: 9px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #ead7a8, #92784d 58%, #403321 100%);
+    border: 1px solid rgba(18, 14, 10, 0.9);
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.48), 0 1px 2px rgba(0,0,0,0.45);
   }
 
   .cr-card {
-    box-shadow:
-      0 12px 25px rgba(0,0,0,0.8),
-      inset 0 2px 0 rgba(255,255,255,0.25),
-      inset 0 -3px 0 rgba(0,0,0,0.6);
-    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+    background: linear-gradient(155deg, rgba(45,30,18,0.96), rgba(30,20,12,0.98));
+    border: 1px solid rgba(185, 151, 99, 0.28);
+    box-shadow: 0 14px 34px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.035);
+    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
   }
-
   .cr-card:hover {
-    transform: translateY(-6px) scale(1.02);
-    box-shadow:
-      0 20px 30px rgba(0,0,0,0.9),
-      0 0 20px rgba(63, 136, 242, 0.4),
-      inset 0 2px 0 rgba(255,255,255,0.4);
+    transform: translateY(-3px);
+    border-color: rgba(216, 182, 111, 0.48);
+    box-shadow: 0 18px 38px rgba(0,0,0,0.3);
   }
 
   .wt-surface {
-    background: linear-gradient(180deg, rgba(16, 24, 38, 0.96), rgba(11, 17, 29, 0.96));
-    border: 1px solid rgba(255,255,255,0.07);
-    box-shadow: 0 12px 30px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.04);
-    backdrop-filter: blur(12px);
+    background-color: #1e140c;
+    background-image: linear-gradient(135deg, rgba(76,53,31,0.7), transparent 42%),
+      repeating-linear-gradient(2deg, rgba(207,166,108,0.035) 0 1px, transparent 1px 5px),
+      linear-gradient(180deg, #2d1e12, #1e140c);
+    border: 1px solid rgba(190, 157, 105, 0.27);
+    box-shadow: 0 14px 34px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.045);
   }
 
   .arena-stone {
-    background: linear-gradient(180deg, rgba(28,58,107,0.92), rgba(16,36,71,0.96) 45%, rgba(10,23,46,0.98));
-    border: 4px solid rgba(43,92,168,0.9);
-    box-shadow: 0 15px 35px rgba(0,0,0,0.8), inset 0 2px 4px rgba(255,255,255,0.08);
+    background: linear-gradient(180deg, rgba(36,69,86,0.96), rgba(12,35,49,0.98));
+    border: 1px solid rgba(123,169,184,0.28);
+    box-shadow: 0 16px 36px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.06);
   }
 
   .crown-banner {
-    background: linear-gradient(180deg, #ffcc00 0%, #b87400 100%);
-    border: 2px solid #573500;
-    box-shadow: inset 0 2px 0 rgba(255,255,255,0.15), 0 4px 8px rgba(0,0,0,0.5);
+    background: linear-gradient(135deg, #ead39a, #b9914e);
+    border: 1px solid rgba(255,232,177,0.35);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.24);
   }
 
   .wt-card {
-    background: linear-gradient(180deg, rgba(16,24,38,0.94), rgba(11,17,29,0.94));
-    border: 1px solid rgba(255,255,255,0.07);
-    box-shadow: 0 10px 26px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.03);
+    background: linear-gradient(180deg, rgba(25,34,40,0.94), rgba(13,22,28,0.96));
+    border: 1px solid rgba(164,190,197,0.12);
+    box-shadow: 0 10px 26px rgba(0,0,0,0.2);
   }
 
   .wt-border-glow {
@@ -183,7 +134,7 @@
   }
 
   .wt-text-gradient {
-    background: linear-gradient(135deg, #ffe543 0%, #ffbe0b 35%, #f6d857 100%);
+    background: linear-gradient(135deg, #f5dfaa 0%, #d7b66e 42%, #f1d99a 72%, #b8914f 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;

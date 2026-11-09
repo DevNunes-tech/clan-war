@@ -1,365 +1,322 @@
-import React, { useState } from 'react';
-import { Crown, Swords, Users, Menu, X, Flame, Target, History, ShieldCheck, Sparkles, ChevronRight, Trophy, Activity, Radar, ArrowRight } from 'lucide-react';
+import React from 'react';
+import { Crown, Swords, Target, History, ShieldCheck, ArrowRight, CheckCircle2, Zap, TrendingUp, Users, Flame } from 'lucide-react';
 
-const featureCards = [
-    { icon: Target, title: 'Controle de guerra', desc: 'Ataques pendentes, decks usados e progresso estratégico em tempo real.' },
-    { icon: Users, title: 'Leitura do clã', desc: 'Membros ativos, cargos e histórico organizados sem poluição visual.' },
-    { icon: History, title: 'Memória tática', desc: 'Histórico filtrado para destacar o que realmente importa para a liderança.' },
-    { icon: ShieldCheck, title: 'Acesso seguro', desc: 'Somente líderes e co-líderes entram no painel após validação pela API oficial.' }
+const BENEFITS = [
+    { icon: Target, title: 'Fim dos Sangue-sugas', desc: 'Identifique em segundos quem não usou os 4 decks e cobre com 1 clique.' },
+    { icon: TrendingUp, title: 'Gestão de Elite', desc: 'Acompanhe a evolução da fama, histórico de guerras e desempenho individual.' },
+    { icon: Zap, title: 'Automação Inteligente', desc: 'Copie a lista de cobrança formatada para o WhatsApp ou Discord sem esforço.' }
 ];
 
-const metrics = [
-    { label: 'Fama', value: '32.850', accent: 'text-amber-400' },
-    { label: 'Ativos', value: '42/50', accent: 'text-blue-300' },
-    { label: 'Ataques hoje', value: '4/4', accent: 'text-emerald-400' },
+const FEATURES = [
+    { title: 'Radar de Ataques', desc: 'Saiba exatamente quantos ataques faltam e quem está inativo na guerra atual.' },
+    { title: 'Ranking da Corrida', desc: 'Veja quem mais contribuiu com fama e quem está apenas sendo carregado.' },
+    { title: 'Controle de Acesso', desc: 'Painel seguro. Apenas o líder e co-líderes têm a visão privilegiada do clã.' }
 ];
 
 export default function LandingPage({ onNavigate }) {
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-    const scrollToSection = (id) => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.scrollIntoView({ behavior: 'smooth' });
-            setIsMobileMenuOpen(false);
-        }
-    };
-
     return (
-        <div className="relative min-h-screen overflow-hidden bg-[#061124] text-slate-100">
-            <div className="pointer-events-none absolute inset-0 wt-grid opacity-30" />
-            <div className="pointer-events-none absolute -top-24 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-[rgba(63,136,242,0.22)] blur-3xl" />
-            <div className="pointer-events-none absolute top-1/3 right-0 h-80 w-80 rounded-full bg-[rgba(191,29,179,0.18)] blur-3xl" />
+        <div className="min-h-screen bg-[#060b13] text-slate-100 font-sans selection:bg-amber-500/30 overflow-hidden relative">
+            {/* Fundo Premium com textura sutil */}
+            <div className="pointer-events-none absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div>
+            <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-gradient-to-b from-blue-900/20 via-[#060b13] to-transparent blur-3xl"></div>
 
-            <header className="sticky top-0 z-50 border-b-4 border-[#071733] bg-[#0c244d]/95 backdrop-blur-md shadow-[0_6px_15px_rgba(0,0,0,0.7)]">
+            {/* NAVBAR */}
+            <header className="sticky top-0 z-50 border-b border-white/5 bg-[#060b13]/80 backdrop-blur-xl">
                 <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center gap-3">
-                        <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl border-2 border-[#523300] bg-gradient-to-b from-[#ffdb4d] to-[#d68b00] shadow-[0_4px_0_#754700]">
-                            <div className="btn-gloss" />
-                            <Crown className="relative h-6 w-6 text-[#0b1730] fill-[#0b1730]" />
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 shadow-lg shadow-amber-500/20">
+                            <Swords className="h-5 w-5 text-[#060b13]" />
                         </div>
-                        <div>
-                            <div className="flex items-center gap-1.5">
-                                <span className="font-clash text-2xl tracking-wider text-[#ffde43] stroke-black-sm">WARTRACKER</span>
-                                <span className="rounded-full border border-[#520808] bg-[#e62e2e] px-2 py-0.5 text-[10px] font-clash uppercase text-white shadow">Clã QG</span>
-                            </div>
-                            <p className="hidden text-xs font-semibold tracking-wide text-blue-200 sm:block">Painel Oficial para Líderes & Co-Líderes</p>
-                        </div>
+                        <span className="text-2xl font-black tracking-tight text-white font-clash">River <span className="text-amber-400">Vanguard</span></span>
                     </div>
 
-                    <nav className="hidden items-center gap-8 md:flex">
-                        <button onClick={() => scrollToSection('guerra')} className="font-clash flex items-center gap-1.5 text-lg tracking-wide text-blue-100 transition-colors hover:text-[#ffbe0b] stroke-black-sm"><span>⚔️</span> Corrida Fluvial</button>
-                        <button onClick={() => scrollToSection('recursos')} className="font-clash flex items-center gap-1.5 text-lg tracking-wide text-blue-100 transition-colors hover:text-[#ffbe0b] stroke-black-sm"><span>🛡️</span> Ferramentas de Clã</button>
-                        <button onClick={() => scrollToSection('sanguessugas')} className="font-clash flex items-center gap-1.5 text-lg tracking-wide text-red-300 transition-colors hover:text-red-200 stroke-black-sm"><span>🚨</span> Cobrança & Expulsão</button>
+                    <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
+                        <a href="#beneficios" className="hover:text-amber-400 transition-colors">Benefícios</a>
+                        <a href="#funcionalidades" className="hover:text-amber-400 transition-colors">Funcionalidades</a>
+                        <a href="#planos" className="hover:text-amber-400 transition-colors">Planos</a>
                     </nav>
 
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => onNavigate('login')}
-                            className="group relative rounded-2xl border-2 border-[#093d14] bg-gradient-to-b from-[#69f580] via-[#2fc447] to-[#1a8c2d] px-6 py-2.5 shadow-[0_5px_0_0_#10591f,0_8px_15px_rgba(0,0,0,0.6)] transition-all active:translate-y-1 active:shadow-[0_1px_0_0_#10591f]"
-                        >
-                            <div className="btn-gloss" />
-                            <span className="font-clash flex items-center gap-2 text-lg uppercase tracking-wider text-white stroke-black-sm"><span>⚔️</span> Entrar no QG</span>
-                        </button>
-                    </div>
-
-                    <button
-                        className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-slate-100 md:hidden"
-                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                    >
-                        {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-                    </button>
-                </div>
-
-                {isMobileMenuOpen && (
-                    <div className="border-t border-white/5 bg-[#0D1320]/95 px-4 py-4 backdrop-blur-xl md:hidden">
-                        <div className="mx-auto max-w-7xl space-y-3">
-                            <button onClick={() => scrollToSection('guerra')} className="block w-full rounded-2xl border border-white/5 bg-white/5 px-4 py-3 text-left text-sm font-medium text-slate-200">Corrida Fluvial</button>
-                            <button onClick={() => scrollToSection('recursos')} className="block w-full rounded-2xl border border-white/5 bg-white/5 px-4 py-3 text-left text-sm font-medium text-slate-200">Ferramentas</button>
-                            <button
-                                onClick={() => onNavigate('login')}
-                                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#2fc447] to-[#1a8c2d] px-4 py-3 text-sm font-bold text-white"
-                            >
-                                Entrar no QG <ArrowRight className="h-4 w-4" />
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </header>
-
-            <div className="bg-gradient-to-r from-[#941111] via-[#c92626] to-[#941111] border-b-2 border-[#540707] py-2 px-4 text-center shadow-inner">
-                <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-3">
-                    <span className="text-xl animate-bounce">🔥</span>
-                    <p className="font-clash text-sm text-white tracking-wide md:text-base stroke-black-sm">
-                        GUERRA EM ANDAMENTO: <span className="text-yellow-300">8 COMBATENTES</span> AINDA NÃO USARAM OS DECK DE GUERRA HOJE!
-                    </p>
                     <button
                         onClick={() => onNavigate('login')}
-                        className="rounded-lg border border-[#6b4207] bg-[#ffe142] px-3 py-1 text-xs font-clash uppercase tracking-wider text-[#422600] shadow hover:bg-yellow-300"
+                        className="rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-[#060b13] transition-all hover:bg-slate-200 hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.1)]"
                     >
-                        Cobrar Agora 📢
+                        Entrar no Painel
                     </button>
                 </div>
-            </div>
+            </header>
 
-            <main className="mx-auto max-w-7xl space-y-16 px-4 py-10 lg:px-8">
-                <section className="grid grid-cols-1 items-center gap-10 pt-4 lg:grid-cols-12">
-                    <div className="space-y-6 text-center lg:col-span-7 lg:text-left">
-                        <div className="inline-flex items-center gap-2 rounded-full border-2 border-[#2b5ba3] bg-[#0e2c5e] px-4 py-1.5 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4)]">
-                            <span className="text-lg">🏆</span>
-                            <span className="font-clash text-sm uppercase tracking-wider text-yellow-300 stroke-black-sm">Rumo à Liga Lendária</span>
-                            <span className="h-2.5 w-2.5 animate-ping rounded-full bg-emerald-500" />
+            <main className="relative z-10 mx-auto max-w-7xl px-4 py-20 lg:px-8">
+                {/* HERO SECTION */}
+                <div className="grid lg:grid-cols-2 gap-16 items-center">
+                    <div className="space-y-8 text-center lg:text-left">
+                        <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-amber-400">
+                            <Flame className="h-4 w-4" />
+                            A ferramenta definitiva para líderes
                         </div>
 
-                        <h1 className="font-clash text-4xl leading-none tracking-wide text-white sm:text-5xl lg:text-6xl stroke-black-lg">
-                            NENHUM BARCO FICA PARA TRÁS.<br />
-                            <span className="bg-gradient-to-b from-[#ffe543] via-[#ffbe0b] to-[#d67b00] bg-clip-text text-transparent drop-shadow-[0_4px_0_#543200]">
-                                LIDERE SEU CLÃ
-                            </span>
-                            {' '}À VITÓRIA!
+                        <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.1] text-white">
+                            Pare de perder guerras por <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500">membros inativos.</span>
                         </h1>
 
-                        <p className="max-w-2xl text-lg font-medium leading-relaxed text-blue-100 drop-shadow sm:text-xl">
-                            Chega de perder guerra por membro sanguessuga que não ataca. Monitore os <strong className="text-yellow-300">4 ataques diários</strong>, cobre medalhas com 1 clique no WhatsApp e mantenha apenas quem joga de verdade.
+                        <p className="text-lg text-slate-400 max-w-xl mx-auto lg:mx-0 leading-relaxed">
+                            O River Vanguard dá aos líderes de clã o poder de monitorar ataques, cobrar participação e gerenciar a Corrida Fluvial com precisão cirúrgica. Tudo em um painel rápido e sem complicação.
                         </p>
 
-                        <div className="flex flex-col items-center justify-center gap-5 pt-2 sm:flex-row lg:justify-start">
+                        <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
                             <button
                                 onClick={() => onNavigate('login')}
-                                className="group relative w-full rounded-2xl border-2 border-[#573500] bg-gradient-to-b from-[#ffe759] via-[#ffbe0b] to-[#d67b00] px-8 py-4 shadow-[0_6px_0_0_#874b00,0_10px_20px_rgba(0,0,0,0.7)] transition-all active:translate-y-1.5 active:shadow-[0_1px_0_0_#874b00] sm:w-auto"
+                                className="group flex w-full sm:w-auto items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 px-8 py-4 font-black text-white shadow-[0_0_30px_rgba(245,158,11,0.3)] transition-all hover:shadow-[0_0_40px_rgba(245,158,11,0.5)] hover:scale-105 active:scale-95"
                             >
-                                <div className="btn-gloss" />
-                                <div className="flex items-center justify-center gap-3">
-                                    <span className="text-2xl">⚔️</span>
-                                    <span className="font-clash text-2xl uppercase tracking-wider text-white stroke-black-md">Acessar WarRoom</span>
-                                </div>
+                                Acessar WarRoom
+                                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                             </button>
-
-                            <button
-                                onClick={() => onNavigate('login')}
-                                className="group relative w-full rounded-2xl border-2 border-[#09224c] bg-gradient-to-b from-[#3a8bf7] via-[#1c5cb5] to-[#103a78] px-6 py-4 shadow-[0_6px_0_0_#0a224a,0_10px_20px_rgba(0,0,0,0.5)] transition-all active:translate-y-1.5 active:shadow-[0_1px_0_0_#0a224a] sm:w-auto"
-                            >
-                                <div className="btn-gloss" />
-                                <div className="flex items-center justify-center gap-2">
-                                    <span className="text-xl">📜</span>
-                                    <span className="font-clash text-xl uppercase tracking-wider text-blue-100 stroke-black-sm">Ver Demonstração</span>
-                                </div>
-                            </button>
+                            <div className="flex items-center gap-2 text-sm font-medium text-slate-400">
+                                <CheckCircle2 className="h-4 w-4 text-emerald-400" /> Acesso via API Oficial.
+                            </div>
                         </div>
 
-                        <div className="grid max-w-lg grid-cols-3 gap-3 pt-4">
-                            {metrics.map((metric) => (
-                                <div key={metric.label} className="rounded-2xl border-2 border-[#204a87] bg-[#0b1e42]/80 p-3 text-center shadow-md">
-                                    <p className={`font-clash text-2xl stroke-black-sm ${metric.accent}`}>{metric.value}</p>
-                                    <p className="text-xs font-bold uppercase text-blue-200">{metric.label}</p>
-                                </div>
-                            ))}
+                        {/* Social Proof */}
+                        <div className="pt-8 border-t border-white/5">
+                            <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4">Utilizado por líderes de elite</p>
+                            <div className="flex gap-6 opacity-40 grayscale">
+                                <span className="font-black text-xl italic">OS IMPERADORES</span>
+                                <span className="font-black text-xl italic">DARK SIDE</span>
+                                <span className="font-black text-xl italic">ELITE ROYALE</span>
+                            </div>
                         </div>
                     </div>
 
-                    <div id="guerra" className="lg:col-span-5">
-                        <div className="relative rounded-3xl border-4 border-[#2b5ca8] bg-gradient-to-b from-[#1c3a6b] via-[#102547] to-[#0a172e] p-6 shadow-[0_15px_35px_rgba(0,0,0,0.8),inset_0_2px_4px_rgba(255,255,255,0.3)]">
-                            <div className="rivet absolute left-3 top-3" />
-                            <div className="rivet absolute right-3 top-3" />
-                            <div className="rivet absolute bottom-3 left-3" />
-                            <div className="rivet absolute bottom-3 right-3" />
+                    {/* MOCKUP DO DASHBOARD (Mais detalhado e tecnológico) */}
+                    <div className="relative mx-auto w-full max-w-lg lg:max-w-none">
+                        <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/20 to-blue-500/20 blur-3xl -z-10 rounded-full"></div>
+                        <div className="rounded-3xl border border-white/10 bg-[#0B1220]/90 p-6 shadow-2xl backdrop-blur-2xl relative overflow-hidden">
 
-                            <div className="mb-4 flex -mt-10 justify-center">
-                                <div className="relative rounded-2xl border-2 border-[#573500] bg-gradient-to-b from-[#ffcc00] to-[#b87400] px-6 py-2 shadow-[0_4px_0_#573500,0_8px_15px_rgba(0,0,0,0.6)]">
-                                    <div className="btn-gloss" />
-                                    <h2 className="font-clash flex items-center gap-2 text-lg uppercase tracking-wider text-white stroke-black-md"><span>🛡️</span> WARROOM OPERACIONAL</h2>
-                                </div>
-                            </div>
+                            {/* Detalhe decorativo no topo do painel */}
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-amber-500 to-transparent opacity-50"></div>
 
-                            <div className="mb-4 flex items-center justify-between border-b-2 border-[#20437a] pb-4">
+                            <div className="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
                                 <div className="flex items-center gap-3">
-                                    <div className="flex h-12 w-12 items-center justify-center rounded-xl border-2 border-white/40 bg-gradient-to-br from-red-600 to-red-900 text-2xl shadow">⚔️</div>
+                                    <div className="h-10 w-10 rounded-full bg-red-500/20 flex items-center justify-center text-red-400 border border-red-500/30">
+                                        <ShieldCheck className="h-5 w-5" />
+                                    </div>
                                     <div>
-                                        <h3 className="font-clash text-xl tracking-wide text-white stroke-black-sm">OS IMPERADORES</h3>
-                                        <p className="text-xs font-bold text-blue-300">#2PP9UU0L • LIGA OURO III</p>
+                                        <h3 className="font-bold text-white text-lg">Os Imperadores</h3>
+                                        <p className="text-xs text-slate-400">Dia 2 de 4 • Liga Lendária</p>
                                     </div>
                                 </div>
-                                <div className="text-right">
-                                    <span className="inline-block rounded-full border border-emerald-500 bg-emerald-500/20 px-2.5 py-1 text-[10px] font-clash uppercase text-emerald-300 animate-pulse">AO VIVO</span>
-                                    <p className="mt-1 text-[11px] font-bold text-blue-200">DIA 2 DE 4</p>
-                                </div>
-                            </div>
-
-                            <div className="mb-5 grid grid-cols-2 gap-3">
-                                <div className="relative overflow-hidden rounded-2xl border-2 border-[#1a3b6e] bg-[#08152b] p-3">
-                                    <div className="flex items-start justify-between">
-                                        <span className="text-xs font-bold uppercase tracking-wider text-blue-300">Ataques Pendentes</span>
-                                        <span className="text-lg">🚨</span>
-                                    </div>
-                                    <p className="mt-1 font-clash text-4xl text-[#ff4242] stroke-black-md" id="stat-pendentes">8</p>
-                                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[#1b2f52]">
-                                        <div className="h-full w-[16%] bg-red-500" />
-                                    </div>
-                                </div>
-
-                                <div className="relative overflow-hidden rounded-2xl border-2 border-[#1a3b6e] bg-[#08152b] p-3">
-                                    <div className="flex items-start justify-between">
-                                        <span className="text-xs font-bold uppercase tracking-wider text-blue-300">Combatentes</span>
-                                        <span className="text-lg">👥</span>
-                                    </div>
-                                    <p className="mt-1 font-clash text-4xl text-emerald-400 stroke-black-md">42<span className="text-xl text-blue-200">/50</span></p>
-                                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[#1b2f52]">
-                                        <div className="h-full w-[84%] bg-emerald-400" />
-                                    </div>
-                                </div>
-
-                                <div className="rounded-2xl border-2 border-[#1a3b6e] bg-[#08152b] p-3">
-                                    <span className="text-xs font-bold uppercase tracking-wider text-blue-300">Fama / Medalhas</span>
-                                    <div className="mt-1 flex items-baseline gap-1">
-                                        <span className="font-clash text-3xl text-yellow-300 stroke-black-md">32.850</span>
-                                        <span className="text-xs font-bold text-yellow-400">🛡️</span>
-                                    </div>
-                                </div>
-
-                                <div className="rounded-2xl border-2 border-[#1a3b6e] bg-[#08152b] p-3">
-                                    <span className="text-xs font-bold uppercase tracking-wider text-blue-300">Decks Usados Hoje</span>
-                                    <p className="mt-1 font-clash text-3xl text-blue-100 stroke-black-md">168<span className="text-xl text-blue-400">/200</span></p>
+                                <div className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-bold text-emerald-400 animate-pulse">
+                                    AO VIVO
                                 </div>
                             </div>
 
+                            {/* Grid de Stats com mais dados */}
+                            <div className="grid grid-cols-2 gap-4 mb-6">
+                                <div className="rounded-2xl border border-white/5 bg-white/5 p-4 relative overflow-hidden">
+                                    <p className="text-xs font-medium text-slate-400 mb-1">Ataques Pendentes</p>
+                                    <p className="text-3xl font-black text-red-400">8</p>
+                                    <div className="absolute bottom-0 left-0 h-1 bg-red-500 w-[30%]"></div>
+                                </div>
+                                <div className="rounded-2xl border border-white/5 bg-white/5 p-4 relative overflow-hidden">
+                                    <p className="text-xs font-medium text-slate-400 mb-1">Fama do Clã</p>
+                                    <p className="text-3xl font-black text-amber-400">32.850</p>
+                                    <div className="absolute bottom-0 left-0 h-1 bg-amber-500 w-[75%]"></div>
+                                </div>
+                                <div className="rounded-2xl border border-white/5 bg-white/5 p-4">
+                                    <p className="text-xs font-medium text-slate-400 mb-1">Participação</p>
+                                    <p className="text-3xl font-black text-emerald-400">84%</p>
+                                </div>
+                                <div className="rounded-2xl border border-white/5 bg-white/5 p-4">
+                                    <p className="text-xs font-medium text-slate-400 mb-1">Decks Usados</p>
+                                    <p className="text-3xl font-black text-blue-400">168<span className="text-sm text-slate-500">/200</span></p>
+                                </div>
+                            </div>
+
+                            {/* Lista de Membros */}
                             <div className="space-y-2">
-                                <div className="flex items-center justify-between px-1 text-xs font-clash uppercase tracking-wider text-blue-200">
-                                    <span>Membro</span>
-                                    <span>Status dos 4 Ataques</span>
+                                <div className="flex justify-between text-xs font-bold text-slate-500 px-2 uppercase tracking-wider mb-2">
+                                    <span>Membros (Amostra)</span>
+                                    <span>Status</span>
                                 </div>
 
-                                <div className="max-h-48 space-y-2 overflow-y-auto pr-1">
-                                    <div className="flex items-center justify-between rounded-xl border border-[#254b85] bg-[#0c1f3d] p-2.5 transition-colors hover:border-emerald-400">
-                                        <div className="flex items-center gap-2.5">
-                                            <span className="text-lg">👑</span>
-                                            <div>
-                                                <p className="font-clash text-sm text-white stroke-black-sm">ShadowKing (Líder)</p>
-                                                <p className="text-[10px] font-bold text-emerald-300">3.600 Medalhas</p>
-                                            </div>
+                                <div className="flex items-center justify-between rounded-xl border border-red-500/20 bg-red-500/5 p-3">
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-lg">⚠️</span>
+                                        <div>
+                                            <p className="font-bold text-white text-sm">Lucas_CR</p>
+                                            <p className="text-xs text-red-400">1 de 4 ataques feitos</p>
                                         </div>
-                                        <span className="rounded-lg border border-emerald-500/50 bg-emerald-500/20 px-2 py-0.5 text-xs font-clash text-emerald-400">4/4 PRONTO</span>
                                     </div>
+                                    <button className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-bold text-white hover:bg-white/20 transition-colors">
+                                        Cobrar
+                                    </button>
+                                </div>
 
-                                    <div className="flex items-center justify-between rounded-xl border border-[#254b85] bg-[#0c1f3d] p-2.5 transition-colors hover:border-emerald-400">
-                                        <div className="flex items-center gap-2.5">
-                                            <span className="text-lg">⚡</span>
-                                            <div>
-                                                <p className="font-clash text-sm text-white stroke-black-sm">Goku_BR (Co-líder)</p>
-                                                <p className="text-[10px] font-bold text-emerald-300">3.450 Medalhas</p>
-                                            </div>
+                                <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/5 p-3">
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-lg">🛡️</span>
+                                        <div>
+                                            <p className="font-bold text-white text-sm">ValkyrieBR</p>
+                                            <p className="text-xs text-amber-400">2 de 4 ataques feitos</p>
                                         </div>
-                                        <span className="rounded-lg border border-emerald-500/50 bg-emerald-500/20 px-2 py-0.5 text-xs font-clash text-emerald-400">4/4 PRONTO</span>
                                     </div>
+                                </div>
 
-                                    <div className="animate-pulse rounded-xl border-2 border-[#801723] bg-[#240b0f] p-2.5 transition-colors hover:border-red-400">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2.5">
-                                                <span className="text-lg">⚠️</span>
-                                                <div>
-                                                    <p className="font-clash text-sm text-red-200 stroke-black-sm">Lucas_CR (Membro)</p>
-                                                    <p className="text-[10px] font-bold text-red-400">Faltam 3 ataques! (1/4)</p>
-                                                </div>
-                                            </div>
-                                            <button
-                                                onClick={() => onNavigate('login')}
-                                                className="rounded-lg border border-[#6b0808] bg-[#d92323] px-2.5 py-1 text-xs font-clash uppercase text-white shadow hover:bg-red-600"
-                                            >
-                                                Cobrar 📲
-                                            </button>
+                                <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/5 p-3 opacity-60">
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-lg">👑</span>
+                                        <div>
+                                            <p className="font-bold text-white text-sm">ShadowKing</p>
+                                            <p className="text-xs text-emerald-400">4 de 4 ataques feitos</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-
-                            <button
-                                onClick={() => onNavigate('login')}
-                                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-[#2e62b0] bg-[#14376b] py-2.5 text-sm font-clash uppercase tracking-wider text-yellow-300 transition-colors hover:bg-[#1c4b91] stroke-black-sm"
-                            >
-                                <span>🔍</span> Abrir Gestão Completa de 50 Membros
-                            </button>
                         </div>
                     </div>
-                </section>
+                </div>
 
-                <section id="recursos" className="space-y-8 pt-8">
-                    <div className="space-y-2 text-center">
-                        <div className="inline-block rounded-full border border-[#2b5ba3] bg-[#163666] px-4 py-1">
-                            <span className="font-clash text-sm uppercase tracking-wider text-yellow-300 stroke-black-sm">Arsenal de Liderança</span>
-                        </div>
-                        <h2 className="font-clash text-3xl tracking-wide text-white sm:text-4xl stroke-black-md">PODER DE FOGO PARA DOMINAR A ARENA</h2>
-                        <p className="mx-auto max-w-xl text-sm font-medium text-blue-200 sm:text-base">
-                            Esqueça anotações no bloco de notas e bots que quebram toda semana.
-                        </p>
+                {/* SEÇÃO DE BENEFÍCIOS */}
+                <section id="beneficios" className="py-24">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl md:text-4xl font-black text-white mb-4">Por que os líderes assinam o River Vanguard?</h2>
+                        <p className="text-slate-400 max-w-2xl mx-auto">Gastar 30 minutos anotando quem atacou no bloco de notas é coisa do passado.</p>
                     </div>
-
-                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                        {featureCards.map((feature, index) => (
-                            <div key={feature.title} className={`cr-card relative overflow-hidden rounded-3xl border-4 bg-gradient-to-b ${index === 0 ? 'from-[#18396b] via-[#102447] to-[#09152b]' : index === 1 ? 'from-[#3a154a] via-[#240b30] to-[#14051c]' : index === 2 ? 'from-[#472e0f] via-[#2e1d07] to-[#1a1002]' : 'from-[#192b45] via-[#0f1c30] to-[#070e1a]'} ${index === 0 ? 'border-[#3f88f2]' : index === 1 ? 'border-[#c238d6]' : index === 2 ? 'border-[#f09a24]' : 'border-[#789ec9]'} p-5`}>
-                                <div className="mb-4 flex items-center justify-between">
-                                    <span className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-gradient-to-br from-pink-500 to-purple-600 font-clash text-white shadow"><feature.icon className="h-4 w-4" /></span>
-                                    <span className="rounded-full border border-[#2a5699] bg-[#0d2242] px-2.5 py-1 text-[10px] font-clash uppercase tracking-wider text-yellow-300">{index === 0 ? 'Lendária' : index === 1 ? 'Épica' : index === 2 ? 'Rara' : 'Blindada'}</span>
+                    <div className="grid md:grid-cols-3 gap-8">
+                        {BENEFITS.map((b, i) => (
+                            <div key={i} className="rounded-3xl border border-white/5 bg-white/[0.02] p-8 transition-all hover:bg-white/[0.05] hover:border-white/10">
+                                <div className="h-12 w-12 rounded-xl bg-amber-500/10 flex items-center justify-center mb-6">
+                                    <b.icon className="h-6 w-6 text-amber-400" />
                                 </div>
-                                <div className={`mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-white/50 text-3xl shadow-lg ${index === 0 ? 'bg-gradient-to-tr from-blue-600 to-cyan-400' : index === 1 ? 'bg-gradient-to-tr from-purple-700 to-pink-500' : index === 2 ? 'bg-gradient-to-tr from-amber-500 to-yellow-300 text-[#422200]' : 'bg-gradient-to-tr from-blue-700 to-indigo-500'}`}>
-                                    <feature.icon className="h-7 w-7" />
-                                </div>
-                                <h3 className="mb-2 text-center font-clash text-xl text-white stroke-black-sm">{feature.title}</h3>
-                                <p className="text-center text-xs leading-relaxed text-blue-200">{feature.desc}</p>
+                                <h3 className="text-xl font-bold text-white mb-3">{b.title}</h3>
+                                <p className="text-slate-400 leading-relaxed text-sm">{b.desc}</p>
                             </div>
                         ))}
                     </div>
                 </section>
 
-                <section id="sanguessugas" className="relative rounded-3xl border-4 border-[#254f8f] bg-gradient-to-b from-[#1c3661] to-[#0b182e] p-6 shadow-[0_15px_30px_rgba(0,0,0,0.8)] sm:p-10">
-                    <div className="rivet absolute left-3 top-3" />
-                    <div className="rivet absolute right-3 top-3" />
-                    <div className="rivet absolute bottom-3 left-3" />
-                    <div className="rivet absolute bottom-3 right-3" />
-
-                    <div className="mx-auto max-w-4xl space-y-6">
-                        <div className="flex flex-col items-center justify-between gap-4 border-b-2 border-[#20457d] pb-6 sm:flex-row">
-                            <div>
-                                <h3 className="font-clash flex items-center gap-3 text-3xl tracking-wide text-white stroke-black-md"><span>🚨</span> GERADOR DE COBRANÇA DO BARCO</h3>
-                                <p className="mt-1 text-sm text-blue-200">Copie a lista pronta de quem ainda não atacou para enviar no WhatsApp ou Discord.</p>
+                {/* SEÇÃO DE FUNCIONALIDADES */}
+                <section id="funcionalidades" className="py-24 border-t border-white/5">
+                    <div className="grid lg:grid-cols-2 gap-16 items-center">
+                        <div>
+                            <h2 className="text-3xl md:text-4xl font-black text-white mb-6">Tudo o que você precisa, em um só lugar.</h2>
+                            <div className="space-y-8">
+                                {FEATURES.map((f, i) => (
+                                    <div key={i} className="flex gap-4">
+                                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                                            <CheckCircle2 className="h-5 w-5 text-blue-400" />
+                                        </div>
+                                        <div>
+                                            <h4 className="text-lg font-bold text-white">{f.title}</h4>
+                                            <p className="text-sm text-slate-400 mt-1">{f.desc}</p>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
+                        </div>
+                        {/* Gráfico visual de fama: evolução dos quatro dias da corrida */}
+                        <div className="relative flex h-96 flex-col justify-between overflow-hidden rounded-3xl border border-white/10 bg-[#0B1220] p-8">
+                            <div className="pointer-events-none absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5" />
+
+                            <div className="relative z-10 mb-4 flex items-center justify-between gap-4">
+                                <div>
+                                    <h3 className="text-xl font-bold text-white">Evolução da Fama</h3>
+                                    <p className="text-sm text-slate-400">Últimos 4 dias de guerra</p>
+                                </div>
+                                <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-400">
+                                    <TrendingUp className="h-4 w-4" /> +12% de rendimento
+                                </div>
+                            </div>
+
+                            <div className="relative z-10 mt-4 flex flex-1 items-end justify-between gap-4">
+                                <div className="flex h-full w-full flex-col items-center justify-end gap-2">
+                                    <div className="group relative h-[40%] w-full rounded-t-lg bg-blue-500/20">
+                                        <div className="absolute inset-x-0 bottom-0 h-full rounded-t-lg bg-gradient-to-t from-blue-700 to-blue-400" />
+                                        <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold text-white opacity-0 transition-opacity group-hover:opacity-100">8.4k</span>
+                                    </div>
+                                    <span className="text-xs font-bold uppercase text-slate-500">Dia 1</span>
+                                </div>
+                                <div className="flex h-full w-full flex-col items-center justify-end gap-2">
+                                    <div className="group relative h-[60%] w-full rounded-t-lg bg-blue-500/20">
+                                        <div className="absolute inset-x-0 bottom-0 h-full rounded-t-lg bg-gradient-to-t from-blue-700 to-blue-400" />
+                                        <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold text-white opacity-0 transition-opacity group-hover:opacity-100">12.1k</span>
+                                    </div>
+                                    <span className="text-xs font-bold uppercase text-slate-500">Dia 2</span>
+                                </div>
+                                <div className="flex h-full w-full flex-col items-center justify-end gap-2">
+                                    <div className="group relative h-[80%] w-full rounded-t-lg bg-amber-500/20">
+                                        <div className="absolute inset-x-0 bottom-0 h-full rounded-t-lg bg-gradient-to-t from-amber-600 to-amber-400" />
+                                        <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold text-white opacity-0 transition-opacity group-hover:opacity-100">18.2k</span>
+                                    </div>
+                                    <span className="text-xs font-bold uppercase text-amber-400">Dia 3</span>
+                                </div>
+                                <div className="flex h-full w-full flex-col items-center justify-end gap-2">
+                                    <div className="group relative h-[95%] w-full rounded-t-lg border-2 border-emerald-500/50 bg-emerald-500/20">
+                                        <div className="absolute inset-x-0 bottom-0 h-full rounded-t-lg bg-gradient-to-t from-emerald-700 to-emerald-400" />
+                                        <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold text-white opacity-0 transition-opacity group-hover:opacity-100">32.8k</span>
+                                    </div>
+                                    <span className="text-xs font-bold uppercase text-emerald-400">Hoje</span>
+                                </div>
+                            </div>
+
+                            <div className="pointer-events-none absolute bottom-[52px] left-0 h-px w-full bg-white/10" />
+                        </div>
+                    </div>
+                </section>
+
+                {/* SEÇÃO DE CTA FINAL / ACESSO VIP */}
+                <section id="planos" className="relative overflow-hidden py-24">
+                    {/* Fundo de destaque */}
+                    <div className="pointer-events-none absolute left-1/2 top-1/2 h-[400px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-amber-500/10 blur-[120px]" />
+
+                    <div className="relative z-10 mx-auto max-w-4xl rounded-[3rem] border border-amber-500/30 bg-[#0B1220] p-10 text-center shadow-[0_0_50px_rgba(245,158,11,0.1)] md:p-16">
+                        {/* Ícone de Coroa / VIP */}
+                        <div className="mb-8 inline-flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-b from-amber-400 to-orange-600 shadow-[0_0_30px_rgba(245,158,11,0.4)]">
+                            <Crown className="h-10 w-10 text-[#060b13]" />
+                        </div>
+
+                        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-amber-400">
+                            <Zap className="h-4 w-4" /> Acesso Restrito
+                        </div>
+
+                        <h2 className="mb-6 text-3xl font-black leading-tight text-white md:text-5xl">
+                            Pronto para assumir o <br className="hidden md:block" />
+                            <span className="bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">Comando do seu Clã?</span>
+                        </h2>
+
+                        <p className="mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-slate-400">
+                            O <strong className="text-white">River Vanguard</strong> é uma ferramenta premium com vagas limitadas para garantir a melhor performance. Entre em contato com nossa equipe para liberar o seu acesso exclusivo e começar a dominar a arena hoje mesmo.
+                        </p>
+
+                        {/* Botões de Ação (WhatsApp e acesso existente) */}
+                        <div className="mb-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
+                            <a
+                                href="https://wa.me/5589999830234"
+                                target="_blank"
+                                rel="noreferrer"
+                                className="group relative inline-flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-700 px-8 py-4 font-black text-white shadow-[0_0_30px_rgba(16,185,129,0.3)] transition-all hover:scale-105 hover:shadow-[0_0_40px_rgba(16,185,129,0.5)] active:scale-95 sm:w-auto"
+                            >
+                                <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z" /></svg>
+                                Falar com o Suporte
+                            </a>
                             <button
                                 onClick={() => onNavigate('login')}
-                                className="group relative rounded-2xl border-2 border-[#543400] bg-gradient-to-b from-[#ffe043] via-[#ffbe0b] to-[#c77a00] px-6 py-3 shadow-[0_5px_0_0_#804800] transition-all active:translate-y-1 active:shadow-none"
+                                className="inline-flex w-full items-center justify-center gap-3 rounded-2xl border border-white/20 bg-white/5 px-8 py-4 font-bold text-white transition-all hover:scale-105 hover:bg-white/10 active:scale-95 sm:w-auto"
                             >
-                                <div className="btn-gloss" />
-                                <span className="font-clash flex items-center gap-2 text-sm uppercase tracking-wider text-white stroke-black-sm"><span>📋</span> Copiar Alerta do Clã</span>
+                                <ShieldCheck className="h-5 w-5 text-slate-400" />
+                                Já tenho acesso
                             </button>
                         </div>
 
-                        <div className="select-all space-y-1 rounded-2xl border-2 border-[#16315c] bg-[#071121] p-4 font-mono text-sm text-green-400 shadow-inner">
-                            <p className="font-clash text-base font-bold tracking-wide text-yellow-300">⚔️ [AVISO DE GUERRA - CLÃ OS IMPERADORES] ⚔️</p>
-                            <p className="text-slate-300">Faltam menos de 6 horas para o reset da Corrida Fluvial!</p>
-                            <p className="font-bold text-red-400">Combatentes com ataques pendentes hoje:</p>
-                            <p className="pl-2 text-white">🔴 1. @Lucas_CR (1/4 ataques)</p>
-                            <p className="pl-2 text-white">🔴 2. @ValkyrieBR (0/4 ataques)</p>
-                            <p className="pl-2 text-white">🔴 3. @PekkaMaster (2/4 ataques)</p>
-                            <p className="pl-2 text-white">🔴 4. @MegaCavaleiroX (0/4 ataques)</p>
-                            <p className="pt-2 text-xs text-yellow-400">⚠️ Quem não zerar os 4 ataques até as 20h estará sujeito a rebaixamento ou banimento!</p>
-                        </div>
+                        <p className="flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-500">
+                            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                            Liberação imediata após a confirmação.
+                        </p>
                     </div>
                 </section>
             </main>
 
-            <footer className="border-t-4 border-[#091b38] bg-[#050e1f] px-4 py-8 text-center">
-                <div className="mx-auto max-w-7xl space-y-3">
-                    <div className="flex items-center justify-center gap-2 font-clash text-xl text-yellow-300 stroke-black-sm">
-                        <span>👑</span> WARTRACKER
-                    </div>
-                    <p className="text-xs font-medium text-blue-300">
-                        Desenvolvido por e para Líderes de Clãs de Clash Royale. Este projeto não é afiliado à Supercell.
-                    </p>
-                    <div className="flex justify-center gap-4 pt-2 text-xs font-bold uppercase text-blue-400">
-                        <button onClick={() => scrollToSection('guerra')} className="hover:text-yellow-300">Corrida Fluvial</button>
-                        <span>•</span>
-                        <button onClick={() => scrollToSection('recursos')} className="hover:text-yellow-300">Ferramentas</button>
-                        <span>•</span>
-                        <button onClick={() => scrollToSection('sanguessugas')} className="hover:text-yellow-300">Radar de Cobrança</button>
-                    </div>
-                </div>
+            <footer className="border-t border-white/5 py-8 text-center text-sm text-slate-600">
+                <p>© {new Date().getFullYear()} River Vanguard. Não afiliado à Supercell.</p>
             </footer>
         </div>
     );
