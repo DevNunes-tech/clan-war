@@ -84,14 +84,19 @@ app.get(['/', '/health', '/api/health', '/api/ping'], async (req, res) => {
         message: 'WarTracker API is alive and running',
     });
 });
-
 // ─────────────────────────────────────────────────────────────
 // Rotas
 // ─────────────────────────────────────────────────────────────
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/clan', require('./routes/clan'));
-app.use('/api/user', require('./routes/user'));
-
+try {
+    app.use('/api/auth', require('./routes/auth.js'));
+    app.use('/api/clan', require('./routes/clan.js'));
+    app.use('/api/user', require('./routes/user.js'));
+    console.log('[startup] Rotas carregadas com sucesso!');
+} catch (error) {
+    console.error('❌ ERRO AO CARREGAR AS ROTAS:', error.message);
+    console.error('Verifique se a pasta "routes" foi enviada corretamente para o servidor.');
+    // Se as rotas falharem, o servidor sobe mas avisa no log
+}
 // ─────────────────────────────────────────────────────────────
 // 404 handler
 // ─────────────────────────────────────────────────────────────
