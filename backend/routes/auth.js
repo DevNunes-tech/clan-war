@@ -29,6 +29,12 @@ const ALLOWED_ROLES = ['leader', 'coleader'];
 const JWT_EXPIRES_IN = '12h';
 const EMAIL_DOMAIN = 'clash-royale.local'; // domínio fake, não envia email
 
+// Tags liberadas para acesso VIP. Adicione ou remova clientes conforme necessário.
+const CLIENTES_VIP = [
+    '#RU99V8YV9', // Tag de teste (Deivinho)
+    '#GG9JYGCOP', // Tag de teste (Piauí)
+];
+
 // ─────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────
@@ -85,12 +91,21 @@ router.post('/login', loginLimiter, validateEnvMiddleware, async (req, res) => {
         });
     }
 
+    // 3. Verificar assinatura antes de consultar a API externa.
+    if (!CLIENTES_VIP.includes(normalizedPlayerTag)) {
+        console.warn(`[auth/login] Acesso negado (não VIP): ${normalizedPlayerTag}`);
+        return res.status(403).json({
+            success: false,
+            message: 'Assinatura inativa. Entre em contato com o suporte para liberar seu acesso VIP.',
+        });
+    }
+
     try {
-        // 3. Buscar jogador na API do Clash Royale
+        // 4. Buscar jogador na API do Clash Royale
         //    ⚠️ O endpoint /players/{tag} NÃO retorna o campo `role`.
         const player = await crApi.getPlayer(normalizedPlayerTag);
 
-        // 4. Validar que o jogador tem clã
+        // 5. Validar que o jogador tem clã
         if (!player.clan) {
             return res.status(403).json({
                 success: false,
@@ -98,7 +113,7 @@ router.post('/login', loginLimiter, validateEnvMiddleware, async (req, res) => {
             });
         }
 
-        // 5. Validar que o jogador pertence ao clã monitorado
+        // 6. Validar que o jogador pertence ao clã monitorado
         if (normalizeTag(player.clan.tag) !== envClanTag) {
             return res.status(403).json({
                 success: false,
@@ -106,7 +121,7 @@ router.post('/login', loginLimiter, validateEnvMiddleware, async (req, res) => {
             });
         }
 
-        // 6. Buscar `role` via endpoint de membros do clã
+        // 7. Buscar `role` via endpoint de membros do clã
         //    (o /players não retorna role)
         const clan = await crApi.getClan(envClanTag);
         const member = Array.isArray(clan.memberList)
@@ -124,7 +139,7 @@ router.post('/login', loginLimiter, validateEnvMiddleware, async (req, res) => {
             });
         }
 
-        // 7. Upsert atômico do usuário (evita race condition)
+        // 8. Upsert atômico do usuário (evita race condition)
         const user = await User.findOneAndUpdate(
             { playerTag: normalizedPlayerTag },
             {
@@ -157,14 +172,14 @@ router.post('/login', loginLimiter, validateEnvMiddleware, async (req, res) => {
             });
         }
 
-        // 8. Gerar JWT
+        // 9. Gerar JWT
         const token = jwt.sign(
             { id: user._id.toString(), tag: normalizedPlayerTag },
             process.env.JWT_SECRET,
             { expiresIn: JWT_EXPIRES_IN }
         );
 
-        // 9. Responder (sem expor password — o schema já remove via toJSON)
+        // 10. Responder (sem expor password — o schema já remove via toJSON)
         return res.json({
             success: true,
             token,
