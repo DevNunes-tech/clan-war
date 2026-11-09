@@ -6,12 +6,22 @@ import LeaderAlerts from '../components/guerra/LeaderAlerts';
 import MemberTable from '../components/guerra/MemberTable';
 import { formatNumber } from '../utils/formatters';
 
+// Memoiza os componentes filhos para evitar re-renderizações desnecessárias
+const MemoizedDailyWarStats = React.memo(DailyWarStats);
+const MemoizedLeaderAlerts = React.memo(LeaderAlerts);
+const MemoizedMemberTable = React.memo(MemberTable);
+
 export default function WarDashboard({ clanStats, members, onSelectMember }) {
     const war = clanStats.war || {};
     const today = clanStats.today || {};
     const latestDay = clanStats.latestDay;
     const isWarDay = Boolean(war.isWarDay);
-    const loading = !members.length || clanStats?.name === 'Carregando...';
+    
+    // Corrige o loading: Só está carregando se o nome for "Carregando..." (e não pelo tamanho do array)
+    const loading = clanStats?.name === 'Carregando...';
+
+    const notStarted = today.playersNotStarted || 0;
+    const notInRace = today.playersNotInRace || 0;
 
     return (
         <div className="space-y-6">
@@ -66,14 +76,32 @@ export default function WarDashboard({ clanStats, members, onSelectMember }) {
             )}
 
             <div className="grid gap-3 sm:grid-cols-3">
-                <div className="wt-surface rounded-2xl border-2 border-[#204987] p-4"><div className="flex items-center justify-between"><span className="font-clash text-xs uppercase tracking-[0.24em] text-emerald-300">Completos</span><span className="font-clash text-xl text-white">{today.playersComplete || 0}</span></div></div>
-                <div className="wt-surface rounded-2xl border-2 border-[#204987] p-4"><div className="flex items-center justify-between"><span className="font-clash text-xs uppercase tracking-[0.24em] text-amber-300">Pendentes</span><span className="font-clash text-xl text-white">{today.playersPending || 0}</span></div></div>
-                <div className="wt-surface rounded-2xl border-2 border-[#204987] p-4"><div className="flex items-center justify-between"><span className="font-clash text-xs uppercase tracking-[0.24em] text-red-300">Não começaram</span><span className="font-clash text-xl text-white">{(today.playersNotStarted || 0) + (today.playersNotInRace || 0)}</span></div></div>
+                <div className="wt-surface rounded-2xl border-2 border-[#204987] p-4">
+                    <div className="flex items-center justify-between">
+                        <span className="font-clash text-xs uppercase tracking-[0.24em] text-emerald-300">Completos</span>
+                        <span className="font-clash text-xl text-white">{today.playersComplete || 0}</span>
+                    </div>
+                </div>
+                <div className="wt-surface rounded-2xl border-2 border-[#204987] p-4">
+                    <div className="flex items-center justify-between">
+                        <span className="font-clash text-xs uppercase tracking-[0.24em] text-amber-300">Pendentes</span>
+                        <span className="font-clash text-xl text-white">{today.playersPending || 0}</span>
+                    </div>
+                </div>
+                <div className="wt-surface rounded-2xl border-2 border-[#204987] p-4">
+                    <div className="flex items-center justify-between">
+                        <span className="font-clash text-xs uppercase tracking-[0.24em] text-red-300">Não começaram</span>
+                        <span className="font-clash text-xl text-white">
+                            {notStarted}
+                            {notInRace > 0 && <span className="text-sm text-slate-400 ml-1">(+{notInRace} fora)</span>}
+                        </span>
+                    </div>
+                </div>
             </div>
 
-            <DailyWarStats today={today} isWarDay={isWarDay} />
-            <LeaderAlerts members={members} clanName={clanStats?.name} isWarDay={isWarDay} />
-            <MemberTable members={members} onSelect={onSelectMember} />
+            <MemoizedDailyWarStats today={today} isWarDay={isWarDay} />
+            <MemoizedLeaderAlerts members={members} clanName={clanStats?.name} isWarDay={isWarDay} />
+            <MemoizedMemberTable members={members} onSelect={onSelectMember} />
         </div>
     );
 }
