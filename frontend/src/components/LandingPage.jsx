@@ -17,6 +17,14 @@ const metrics = [
 export default function LandingPage({ onNavigate }) {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+    const scrollToSection = (id) => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth' });
+            setIsMobileMenuOpen(false);
+        }
+    };
+
     return (
         <div className="relative min-h-screen overflow-hidden bg-[#061124] text-slate-100">
             <div className="pointer-events-none absolute inset-0 wt-grid opacity-30" />
@@ -40,9 +48,9 @@ export default function LandingPage({ onNavigate }) {
                     </div>
 
                     <nav className="hidden items-center gap-8 md:flex">
-                        <a href="#guerra" className="font-clash flex items-center gap-1.5 text-lg tracking-wide text-blue-100 transition-colors hover:text-[#ffbe0b] stroke-black-sm"><span>⚔️</span> Corrida Fluvial</a>
-                        <a href="#recursos" className="font-clash flex items-center gap-1.5 text-lg tracking-wide text-blue-100 transition-colors hover:text-[#ffbe0b] stroke-black-sm"><span>🛡️</span> Ferramentas de Clã</a>
-                        <a href="#sanguessugas" className="font-clash flex items-center gap-1.5 text-lg tracking-wide text-red-300 transition-colors hover:text-red-200 stroke-black-sm"><span>🚨</span> Cobrança & Expulsão</a>
+                        <button onClick={() => scrollToSection('guerra')} className="font-clash flex items-center gap-1.5 text-lg tracking-wide text-blue-100 transition-colors hover:text-[#ffbe0b] stroke-black-sm"><span>⚔️</span> Corrida Fluvial</button>
+                        <button onClick={() => scrollToSection('recursos')} className="font-clash flex items-center gap-1.5 text-lg tracking-wide text-blue-100 transition-colors hover:text-[#ffbe0b] stroke-black-sm"><span>🛡️</span> Ferramentas de Clã</button>
+                        <button onClick={() => scrollToSection('sanguessugas')} className="font-clash flex items-center gap-1.5 text-lg tracking-wide text-red-300 transition-colors hover:text-red-200 stroke-black-sm"><span>🚨</span> Cobrança & Expulsão</button>
                     </nav>
 
                     <div className="flex items-center gap-3">
@@ -66,8 +74,8 @@ export default function LandingPage({ onNavigate }) {
                 {isMobileMenuOpen && (
                     <div className="border-t border-white/5 bg-[#0D1320]/95 px-4 py-4 backdrop-blur-xl md:hidden">
                         <div className="mx-auto max-w-7xl space-y-3">
-                            <a href="#guerra" className="block rounded-2xl border border-white/5 bg-white/5 px-4 py-3 text-sm font-medium text-slate-200">Corrida Fluvial</a>
-                            <a href="#recursos" className="block rounded-2xl border border-white/5 bg-white/5 px-4 py-3 text-sm font-medium text-slate-200">Ferramentas</a>
+                            <button onClick={() => scrollToSection('guerra')} className="block w-full rounded-2xl border border-white/5 bg-white/5 px-4 py-3 text-left text-sm font-medium text-slate-200">Corrida Fluvial</button>
+                            <button onClick={() => scrollToSection('recursos')} className="block w-full rounded-2xl border border-white/5 bg-white/5 px-4 py-3 text-left text-sm font-medium text-slate-200">Ferramentas</button>
                             <button
                                 onClick={() => onNavigate('login')}
                                 className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#2fc447] to-[#1a8c2d] px-4 py-3 text-sm font-bold text-white"
@@ -345,11 +353,11 @@ export default function LandingPage({ onNavigate }) {
                         Desenvolvido por e para Líderes de Clãs de Clash Royale. Este projeto não é afiliado à Supercell.
                     </p>
                     <div className="flex justify-center gap-4 pt-2 text-xs font-bold uppercase text-blue-400">
-                        <a href="#guerra" className="hover:text-yellow-300">Corrida Fluvial</a>
+                        <button onClick={() => scrollToSection('guerra')} className="hover:text-yellow-300">Corrida Fluvial</button>
                         <span>•</span>
-                        <a href="#recursos" className="hover:text-yellow-300">Ferramentas</a>
+                        <button onClick={() => scrollToSection('recursos')} className="hover:text-yellow-300">Ferramentas</button>
                         <span>•</span>
-                        <a href="#sanguessugas" className="hover:text-yellow-300">Radar de Cobrança</a>
+                        <button onClick={() => scrollToSection('sanguessugas')} className="hover:text-yellow-300">Radar de Cobrança</button>
                     </div>
                 </div>
             </footer>
