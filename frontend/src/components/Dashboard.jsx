@@ -770,7 +770,7 @@ export default function Dashboard({ onNavigate }) {
                             </div>
                         )}
 
-                        {/* ABA PERFIL */}
+                                                {/* ABA PERFIL */}
                         {activeTab === 'perfil' && (
                             <div className="animate-in slide-in-from-right-4 duration-500 max-w-2xl mx-auto">
                                 <div className="flex items-center gap-4 mb-6">
@@ -784,4 +784,456 @@ export default function Dashboard({ onNavigate }) {
                                 </div>
 
                                 <div className="wt-surface rounded-[1.5rem] p-6 space-y-6">
-                                    <div className="
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.24em] flex items-center gap-2">
+                                                <User className="h-3 w-3" /> Nome de Guerra
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={profile.name}
+                                                onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                                                className="w-full px-4 py-3 bg-white/4 border border-white/6 rounded-xl focus:border-blue-500 outline-none font-semibold text-white transition-all"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.24em] flex items-center gap-2">
+                                                <Hash className="h-3 w-3" /> Tag do Jogador
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={profile.tag}
+                                                disabled
+                                                className="w-full px-4 py-3 bg-white/5 border border-white/6 rounded-xl font-semibold text-slate-400 cursor-not-allowed uppercase"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.24em] flex items-center gap-2">
+                                            <Mail className="h-3 w-3" /> E-mail de Acesso
+                                        </label>
+                                        <input
+                                            type="email"
+                                            value={profile.email}
+                                            onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                                            className="w-full px-4 py-3 bg-white/4 border border-white/6 rounded-xl focus:border-blue-500 outline-none font-semibold text-white transition-all"
+                                        />
+                                    </div>
+
+                                    <div className="pt-4">
+                                        <button
+                                            onClick={handleSaveProfile}
+                                            disabled={isSaving}
+                                            className="bg-white text-slate-950 px-6 py-3 rounded-xl font-black text-sm hover:bg-slate-200 transition-all border border-white/10 active:translate-y-0.5 flex items-center justify-center gap-2 uppercase w-full sm:w-auto disabled:opacity-50"
+                                        >
+                                            {isSaving ? 'Salvando...' : 'Salvar Alterações'} <Save className="h-5 w-5" />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="mt-6 rounded-2xl border border-amber-500/15 bg-amber-500/8 p-5 flex items-start gap-4">
+                                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-300 flex items-center justify-center shrink-0 border border-amber-500/20">
+                                        <Info className="h-5 w-5" />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-black text-amber-200 uppercase text-xs tracking-[0.22em] mb-1">Dica de líder</h4>
+                                        <p className="text-amber-100/80 text-sm font-medium leading-relaxed">
+                                            Mantenha seu e-mail atualizado para receber relatórios semanais de desempenho do clã e alertas de inatividade.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ABA PREFERÊNCIAS */}
+                        {activeTab === 'preferencias' && (
+                            <div className="animate-in slide-in-from-right-4 duration-500 max-w-2xl mx-auto">
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className="w-16 h-16 bg-white/5 text-white rounded-2xl flex items-center justify-center border border-white/6">
+                                        <Settings className="h-8 w-8" />
+                                    </div>
+                                    <div>
+                                        <h1 className="text-3xl font-black text-white tracking-tight">Preferências</h1>
+                                        <p className="text-slate-400 font-medium">Personalize sua experiência no QG</p>
+                                    </div>
+                                </div>
+
+                                <div className="wt-surface rounded-[1.5rem] overflow-hidden divide-y divide-white/6">
+                                    <div className="p-6 flex items-center justify-between hover:bg-white/3 transition-colors">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 bg-blue-500/10 text-blue-300 rounded-2xl flex items-center justify-center border border-blue-500/15">
+                                                <BellRing className="h-6 w-6" />
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-white">Notificações Push</h4>
+                                                <p className="text-xs text-slate-400 font-medium">Alertas sobre o status da guerra no navegador</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => handleUpdatePrefs({ ...prefs, notifications: !prefs.notifications })}
+                                            className={`w-14 h-8 rounded-full transition-all relative ${prefs.notifications ? 'bg-blue-600' : 'bg-slate-200'}`}
+                                        >
+                                            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all ${prefs.notifications ? 'left-7' : 'left-1'}`}></div>
+                                        </button>
+                                    </div>
+
+                                    <div className="p-6 flex items-center justify-between hover:bg-white/3 transition-colors">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 bg-violet-500/10 text-violet-300 rounded-2xl flex items-center justify-center border border-violet-500/15">
+                                                <Smartphone className="h-6 w-6" />
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-white">Mensagens Automáticas</h4>
+                                                <p className="text-xs text-slate-400 font-medium">Notificar automaticamente membros com ataques pendentes</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => handleUpdatePrefs({ ...prefs, dmAlerts: !prefs.dmAlerts })}
+                                            className={`w-14 h-8 rounded-full transition-all relative ${prefs.dmAlerts ? 'bg-blue-600' : 'bg-slate-200'}`}
+                                        >
+                                            <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all ${prefs.dmAlerts ? 'left-7' : 'left-1'}`}></div>
+                                        </button>
+                                    </div>
+
+                                    <div className="p-6 flex items-center justify-between hover:bg-white/3 transition-colors">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 bg-emerald-500/10 text-emerald-300 rounded-2xl flex items-center justify-center border border-emerald-500/15">
+                                                <Globe className="h-6 w-6" />
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-white">Idioma do Painel</h4>
+                                                <p className="text-xs text-slate-400 font-medium">Configure o idioma da interface</p>
+                                            </div>
+                                        </div>
+                                        <select
+                                            value={prefs.language}
+                                            onChange={(e) => handleUpdatePrefs({ ...prefs, language: e.target.value })}
+                                            className="bg-white/5 border border-white/6 rounded-xl px-4 py-2 font-semibold text-sm text-white outline-none"
+                                        >
+                                            <option>Português</option>
+                                            <option>English</option>
+                                            <option>Español</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ABA MEMBROS */}
+                        {activeTab === 'membros' && (
+                            <div className="animate-in slide-in-from-bottom-4 duration-500 space-y-6">
+                                <div className="flex justify-between items-center">
+                                    <h1 className="text-3xl font-black text-white tracking-tight">Gestão de Membros</h1>
+                                    <span className="bg-white/5 text-blue-200 px-4 py-2 rounded-xl text-xs font-black uppercase border border-white/6">
+                                        Total: {clanStats.totalMembers}
+                                    </span>
+                                </div>
+
+                                <div className="wt-surface rounded-[1.5rem] overflow-hidden">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left text-sm text-slate-300">
+                                            <thead className="bg-white/4 text-slate-500 text-[10px] uppercase font-bold tracking-[0.22em] border-b border-white/6">
+                                                <tr>
+                                                    <th className="px-8 py-5">Nome / Cargo</th>
+                                                    <th className="px-8 py-5 text-center">Troféus Atuais</th>
+                                                    <th className="px-8 py-5 text-center">Tag</th>
+                                                    <th className="px-8 py-5 text-right">Ficha</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-white/6">
+                                                {clanMembers.length > 0 ? (
+                                                    [...clanMembers]
+                                                        .filter(m =>
+                                                            m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                                            m.id.toLowerCase().includes(searchTerm.toLowerCase())
+                                                        )
+                                                        .sort((a, b) => b.trophies - a.trophies)
+                                                        .map((member) => (
+                                                            <tr key={member.id} className="hover:bg-white/3 transition-all group">
+                                                                <td className="px-8 py-5">
+                                                                    <div className="flex items-center gap-4">
+                                                                        <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center font-black text-slate-300 border border-white/6 group-hover:bg-blue-500/10 group-hover:text-blue-200 group-hover:border-blue-500/15 transition-all uppercase">
+                                                                            {member.name.slice(0, 1)}
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="font-black text-white text-base leading-tight">{member.name}</p>
+                                                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{member.role}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-8 py-5 text-center">
+                                                                    <div className="inline-flex items-center gap-2 bg-white/5 px-4 py-2 rounded-xl border border-white/6">
+                                                                        <Trophy className="h-4 w-4 text-amber-400" />
+                                                                        <span className="font-black text-white text-base">{member.trophies.toLocaleString()}</span>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-8 py-5 text-center">
+                                                                    <span className="font-mono text-[10px] font-bold text-slate-400 bg-white/5 px-2 py-1 rounded uppercase border border-white/6">
+                                                                        {member.id}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="px-8 py-5 text-right">
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            setSelectedMember(member);
+                                                                            const latestAttendance = warAttendance.find((entry) => entry.memberTag === member.id);
+                                                                            setAttendanceJustification(latestAttendance?.justification || '');
+                                                                            setShowMemberModal(true);
+                                                                        }}
+                                                                        className="p-2.5 text-blue-200 hover:bg-blue-500/15 hover:text-white rounded-xl transition-all border border-white/6 hover:border-blue-500/20"
+                                                                    >
+                                                                        <User className="h-5 w-5" />
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        ))
+                                                ) : (
+                                                    <tr>
+                                                        <td colSpan="4" className="px-8 py-20 text-center">
+                                                            <Loader2 className="h-10 w-10 text-blue-200 animate-spin mx-auto mb-4" />
+                                                            <p className="text-slate-400 font-bold uppercase text-xs tracking-widest">Convocando Guerreiros...</p>
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ABA HISTÓRICO */}
+                        {activeTab === 'historico' && (
+                            <div className="animate-in slide-in-from-bottom-4 duration-500 space-y-6">
+                                <div className="flex justify-between items-center">
+                                    <h1 className="text-3xl font-black text-white tracking-tight">Histórico de Guerras</h1>
+                                    <div className="flex gap-2 no-print">
+                                        <button
+                                            onClick={handleShare}
+                                            className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-xl text-xs font-black uppercase text-slate-300 border border-white/6 hover:bg-white/8 transition-all"
+                                        >
+                                            <Share2 className="h-4 w-4" /> Enviar Top 5
+                                        </button>
+                                        <button
+                                            onClick={handlePrint}
+                                            className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl text-xs font-black uppercase text-slate-950 hover:bg-slate-200 transition-all"
+                                        >
+                                            <Printer className="h-4 w-4" /> Gerar Relatório
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="wt-surface rounded-[1.5rem] overflow-hidden print:border-none">
+                                    <div className="overflow-x-auto print:overflow-visible no-scrollbar">
+                                        <table className="w-full text-left text-[11px] font-medium text-slate-300 border-collapse print:table">
+                                            <thead className="bg-white/6 text-white uppercase text-[9px] font-black tracking-widest sticky top-0 z-20">
+                                                <tr>
+                                                    <th className="px-3 py-4 text-center bg-[#0B1220] sticky left-0 z-30">Nº</th>
+                                                    <th className="px-4 py-4 min-w-[140px] bg-[#0B1220] sticky left-[36px] z-30 border-r border-white/6">Jogador</th>
+                                                    <th className="px-3 py-4 text-center">Semanas</th>
+                                                    <th className="px-3 py-4 text-center">Total</th>
+                                                    <th className="px-3 py-4 text-center">Média</th>
+                                                    {warHistory.weekHeaders.map((week, idx) => (
+                                                        <th key={idx} className="px-2 py-4 text-center border-l border-white/6 bg-white/5 min-w-[60px]">{week}</th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-white/6">
+                                                {warHistory.members.length > 0 ? (
+                                                    warHistory.members
+                                                        .filter(member => clanMembers.some(currentMember => currentMember.tag === member.tag || currentMember.id === member.tag))
+                                                        .filter(m =>
+                                                            m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                                            m.tag.toLowerCase().includes(searchTerm.toLowerCase())
+                                                        )
+                                                        .map((member, idx) => {
+                                                            const currentMember = clanMembers.find(m => m.id === member.tag);
+                                                            const role = currentMember ? currentMember.role : '-';
+
+                                                            const rankColor = idx < 3 ? 'bg-white/4' : 'bg-transparent';
+                                                            const numColor = idx === 0 ? 'bg-amber-400 text-slate-950' : (idx === 1 ? 'bg-slate-300 text-slate-950' : (idx === 2 ? 'bg-amber-600 text-white' : 'bg-white/5 text-slate-300'));
+
+                                                            return (
+                                                                <tr key={member.tag} className={`group hover:bg-white/4 transition-colors ${rankColor}`}>
+                                                                    <td className={`px-1 py-3 text-center sticky left-0 z-10 ${rankColor}`}>
+                                                                        <span className={`inline-flex items-center justify-center w-6 h-6 rounded-lg font-black text-[10px] shadow-sm ${numColor}`}>
+                                                                            {member.rank < 10 ? `0${member.rank}` : member.rank}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td className={`px-4 py-3 sticky left-[36px] z-10 border-r border-white/6 ${rankColor}`}>
+                                                                        <div>
+                                                                            <p className="font-black text-white group-hover:text-blue-200 transition-colors whitespace-nowrap">{member.name}</p>
+                                                                            <p className="text-[8px] text-slate-400 font-bold uppercase tracking-tighter">{role}</p>
+                                                                        </div>
+                                                                    </td>
+                                                                    <td className="px-3 py-3 text-center font-black text-white">
+                                                                        {member.weeks}
+                                                                    </td>
+                                                                    <td className="px-3 py-3 text-center">
+                                                                        <span className="bg-white/5 px-2 py-1 rounded text-white font-black border border-white/6">
+                                                                            {member.total.toLocaleString()}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td className="px-3 py-3 text-center">
+                                                                        <div className="inline-flex items-center gap-1 font-black text-blue-200 bg-blue-500/10 px-2 py-1 rounded-lg border border-blue-500/15">
+                                                                            {member.average.toLocaleString()}
+                                                                        </div>
+                                                                    </td>
+                                                                    {member.history.map((fame, fIdx) => (
+                                                                        <td key={fIdx} className={`px-2 py-3 text-center border-l border-white/6 font-bold ${fame >= minMedalsTarget ? 'text-emerald-300' : (fame > 0 ? 'text-red-300' : 'text-slate-500')}`}>
+                                                                            {fame > 0 ? fame.toLocaleString() : '-'}
+                                                                        </td>
+                                                                    ))}
+                                                                </tr>
+                                                            );
+                                                        })
+                                                ) : (
+                                                    <tr>
+                                                        <td colSpan={100} className="px-8 py-20 text-center">
+                                                            <Loader2 className="h-10 w-10 text-blue-200 animate-spin mx-auto mb-4" />
+                                                            <p className="text-slate-400 font-bold uppercase text-xs tracking-widest italic">Lendo pergaminhos de guerra...</p>
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ABA ADVERTÊNCIAS */}
+                        {activeTab === 'advertencias' && (
+                            <div className="animate-in slide-in-from-bottom-4 duration-500 space-y-6">
+                                <div>
+                                    <p className="text-xs font-bold uppercase tracking-[0.3em] text-amber-300">Acompanhamento disciplinar</p>
+                                    <h1 className="mt-2 text-3xl font-black text-white tracking-tight">Advertências</h1>
+                                    <p className="mt-2 text-sm text-slate-400">Só entram registros feitos pela liderança. Ausência na lista de participantes da API não gera advertência sozinha.</p>
+                                </div>
+                                <WarningsTable attendance={warAttendance} members={clanMembers} />
+                            </div>
+                        )}
+
+                        {/* ABA CONFIGS */}
+                        {activeTab === 'configs' && (
+                            <div className="animate-in slide-in-from-bottom-4 duration-500 space-y-8">
+                                <div className="flex items-center gap-4 mb-2">
+                                    <div className="w-16 h-16 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-200">
+                                        <Settings className="h-8 w-8" />
+                                    </div>
+                                    <div>
+                                        <h1 className="text-3xl font-black text-white tracking-tight">Configurações do QG</h1>
+                                        <p className="text-slate-400 font-medium">Controle as regras e monitoramento do clã</p>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="wt-surface rounded-[1.5rem] p-6 space-y-6">
+                                        <div className="flex items-center gap-3 text-blue-300 mb-4">
+                                            <ShieldAlert className="h-6 w-6" />
+                                            <h3 className="font-semibold tracking-[0.08em] text-base text-white">Monitoramento</h3>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.24em]">Tag do Clã Primário</label>
+                                                <div className="flex gap-2">
+                                                    <input
+                                                        type="text"
+                                                        value={clanStats.tag}
+                                                        disabled
+                                                        className="w-full px-4 py-3 bg-white/5 border border-white/6 rounded-xl font-semibold text-slate-400 cursor-not-allowed uppercase"
+                                                    />
+                                                    <button className="px-4 py-2 bg-white/5 text-slate-500 font-black rounded-xl hover:bg-white/10 transition-colors border border-white/6" disabled>
+                                                        EDITAR
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.24em]">Meta de Fama (Mínimo)</label>
+                                                <div className="flex items-center gap-4">
+                                                    <input
+                                                        type="range"
+                                                        min="0"
+                                                        max="3600"
+                                                        step="100"
+                                                        value={minMedalsTarget}
+                                                        onChange={(e) => setMinMedalsTarget(parseInt(e.target.value))}
+                                                        className="flex-1 accent-blue-600"
+                                                    />
+                                                    <span className="font-black text-blue-600 text-xl w-16 text-center">{minMedalsTarget}</span>
+                                                </div>
+                                                <p className="text-[10px] text-slate-500 font-bold uppercase italic">Abaixo disso, o histórico ficará em destaque</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="wt-surface rounded-[1.5rem] p-6 space-y-6">
+                                        <div className="flex items-center gap-3 text-amber-300 mb-4">
+                                            <Swords className="h-6 w-6" />
+                                            <h3 className="font-semibold tracking-[0.08em] text-base text-white">Agenda de Guerra</h3>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <div className="p-4 bg-white/5 rounded-2xl border border-white/6 flex items-center justify-between">
+                                                <span className="font-bold text-white">Status da API</span>
+                                                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${clanStats.isWarDay ? 'bg-amber-400 text-slate-950' : 'bg-white/10 text-slate-400'}`}>
+                                                    {clanStats.war?.periodType === 'colosseum' ? 'COLISEU' : (clanStats.isWarDay ? 'DIA DE GUERRA' : (clanStats.war?.isTraining ? 'TREINO' : 'SEM CORRIDA'))}
+                                                </span>
+                                            </div>
+
+                                            <div className="bg-white/4 p-5 rounded-2xl space-y-3 border border-white/6">
+                                                <div className="flex justify-between items-center text-xs font-bold">
+                                                    <span className="text-slate-500 uppercase tracking-[0.18em]">Corrida</span>
+                                                    <span className="text-white">{clanStats.war?.label || '—'}</span>
+                                                </div>
+                                                <p className="text-sm text-slate-400">
+                                                    {clanStats.isWarDay
+                                                        ? `Dia ${clanStats.war?.day || '-'}/4 segundo periodIndex da River Race.`
+                                                        : 'O dia da guerra não é inferido pelo calendário (quinta a domingo).'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                    </div>
+                </div>
+
+                {/* Overlay para fechar menus ao clicar fora */}
+                {(showNotifications || showProfileMenu) && (
+                    <div
+                        className="fixed inset-0 z-20"
+                        onClick={() => { setShowNotifications(false); setShowProfileMenu(false); }}
+                    ></div>
+                )}
+            </main>
+
+            {/* Overlay do menu mobile */}
+            {sidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden"
+                    onClick={() => setSidebarOpen(false)}
+                ></div>
+            )}
+
+            <MemberDetailModal
+                member={showMemberModal ? selectedMember : null}
+                attendance={warAttendance}
+                history={warHistory.members}
+                justification={attendanceJustification}
+                onJustificationChange={setAttendanceJustification}
+                onSave={handleSaveAttendance}
+                onClose={() => {
+                    setShowMemberModal(false);
+                    setAttendanceJustification('');
+                }}
+                isSaving={isSavingAttendance}
+            />
+        </div>
+    );
+}
