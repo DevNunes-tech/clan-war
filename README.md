@@ -1,18 +1,28 @@
-# WarTracker
+# River Vanguard
 
-Painel web para acompanhar a Corrida Fluvial do clã no Clash Royale. O
-WarTracker reúne dados de guerra, participação dos membros e alertas para
-líderes e co-líderes.
+**Mais clareza para liderar a Corrida Fluvial do seu clã.**
+
+O River Vanguard é um painel de gestão para líderes e co-líderes de clãs de
+Clash Royale. Acompanhe ataques, fama e participação dos membros em um só
+lugar, identifique pendências e organize o histórico das guerras para tomar
+decisões com mais contexto.
+
+Quer solicitar acesso ou tirar dúvidas? [Fale com o suporte pelo WhatsApp](https://wa.me/5589999830234).
+
+O acesso é liberado manualmente após validação. O projeto ainda não possui
+checkout ou processamento automático de pagamentos.
 
 ## Recursos
 
-- Consulta da guerra atual, dos ataques e do progresso diário dos membros.
-- Histórico de guerras e participação individual.
-- Alertas e tabela de advertências, com exportação dos dados exibidos.
-- Registro de justificativas de presença.
-- Login pela tag do jogador, com liberação VIP e validação do clã e do cargo na API do Clash Royale.
-- Contato com o suporte pelo WhatsApp para solicitar a liberação de acesso VIP.
-- Perfil e preferências do usuário.
+- **Visão da guerra:** consulte fama, ataques e participação dos membros.
+- **Acompanhamento do clã:** encontre pendências e revise o histórico de guerras.
+- **Organização da liderança:** registre justificativas e consulte advertências.
+- **Acesso controlado:** autenticação pela tag do jogador, com validação de
+  assinatura, clã e cargo de líder ou co-líder.
+- **Preferências pessoais:** gerencie o perfil, as notificações e os alertas.
+
+O painel foi pensado para reduzir o trabalho de conferência manual e ajudar a
+liderança a agir antes que ataques pendentes comprometam o desempenho do clã.
 
 ## Tecnologias
 
